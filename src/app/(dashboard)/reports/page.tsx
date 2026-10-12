@@ -1,0 +1,289 @@
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+import { getDailyReport, getMonthlyReport } from "@/lib/analytics";
+import { todayIST } from "@/lib/dates";
+import { ReportCsvExport } from "@/components/reports/report-export";
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string; month?: string }>;
+}) {
+  const params = await searchParams;
+
+  const defaultDate = todayIST();
+  const defaultMonth = defaultDate.slice(0, 7);
+
+  const dailyDate = params.date ?? defaultDate;
+  const daily = await getDailyReport(dailyDate);
+
+  const month = params.month ?? defaultMonth;
+  const monthly = await getMonthlyReport(month);
+
+  const dailyCsvRows: (string | number | null)[][] = [
+    ["Date", daily.date],
+    ["Stock In Boxes", daily.stockInBoxes],
+    ["Sales Boxes", daily.salesBoxes],
+    ["Sales Count", daily.salesCount],
+    ["Sales Amount (₹)", daily.salesAmount],
+    ["Payments Received (₹)", daily.paymentsReceived],
+    ["Pending at Date (₹)", daily.pendingAtDate],
+    [],
+    ["Product", "Size", "Boxes"],
+    ...daily.stockInRows.map((r) => [r.productName, r.size, r.boxes] as [string, string, number]),
+  ];
+
+  const dailyFileName = `naseeb-report-${dailyDate}.csv`;
+
+  const monthlyCsvRows: (string | number | null)[][] = [
+    ["Month", monthly.month],
+    ["Total Sales Amount (₹)", monthly.totalSalesAmount],
+    ["Total Boxes Sold", monthly.totalBoxesSold],
+    ["Total Pending (₹)", monthly.totalPending],
+    [],
+    ["Product", "Size", "Boxes Sold", "Amount (₹)"],
+    ...monthly.productSales.map((r) => [r.name, r.size, r.boxes, r.amount] as [string, string, number, number]),
+    [],
+    ["Customer", "Boxes Sold", "Amount (₹)"],
+    ...monthly.customerSales.map((r) => [r.name, r.boxes, r.amount]),
+    [],
+    ["Staff", "Boxes Delivered"],
+    ...monthly.staffDelivered.map((r) => [r.name, r.boxes] as [string, number]),
+  ];
+
+  const monthlyFileName = `naseeb-report-${monthly.month}.csv`;
+
+  const monthLabel = new Date(`${month}-01`).toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #report-page, #report-page * { visibility: visible; }
+          #report-page { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+      `}</style>
+
+      <div id="report-page" className="max-w-6xl">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold tracking-tight">Reports</h1>
+          <p className="text-sm text-muted-foreground">Daily and monthly overview with CSV export.</p>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          {/* Daily Report Section */}
+          <div id="daily-section">
+            
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <CardTitle>Daily Report</CardTitle>
+                  <form method="get" className="no-print flex shrink-0 items-center gap-2">
+                    <label htmlFor="date" className="text-sm text-muted-foreground">
+                      Date
+                    </label>
+                    <input
+                      id="date"
+                      name="date"
+                      type="date"
+                      defaultValue={dailyDate}
+                      className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Update
+                    </button>
+                  </form>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {daily.stockInRows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No stock-in records for this date.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Stock In Boxes</span>
+                      <span className="tabular-nums">{daily.stockInBoxes}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Sales Boxes</span>
+                      <span className="tabular-nums">{daily.salesBoxes}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Sales Count</span>
+                      <span className="tabular-nums">{daily.salesCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Sales Amount</span>
+                      <span className="tabular-nums">₹{daily.salesAmount.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Payments Received</span>
+                      <span className="tabular-nums">₹{daily.paymentsReceived.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-destructive">Pending at Date</span>
+                      <span className="tabular-nums text-destructive">₹{daily.pendingAtDate.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 border-t border-border/60 pt-4">
+                  <h3 className="text-sm font-semibold mb-2">Stock In Detail (Date)</h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-left text-muted-foreground">
+                        <th className="py-2 pr-2 font-medium">Product</th>
+                        <th className="py-2 pr-2 font-medium">Size</th>
+                        <th className="py-2 font-medium">Boxes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {daily.stockInRows.map((r) => (
+                        <tr key={`${r.productName}-${r.size}`} className="border-b border-border/40">
+                          <td className="py-2 pr-2">{r.productName}</td>
+                          <td className="py-2 pr-2">{r.size}</td>
+                          <td className="py-2 pr-2 tabular-nums">{r.boxes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4">
+                  <ReportCsvExport filename={dailyFileName} rows={dailyCsvRows} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Monthly Report Section */}
+          <div id="monthly-section">
+            
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <CardTitle>Monthly Report</CardTitle>
+                  <form method="get" className="no-print flex shrink-0 items-center gap-2">
+                    <label htmlFor="month" className="text-sm text-muted-foreground">
+                      Month
+                    </label>
+                    <input
+                      id="month"
+                      name="month"
+                      type="month"
+                      defaultValue={month}
+                      className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Update
+                    </button>
+                  </form>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Month</span>
+                    <span className="tabular-nums">{monthLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total Sales Amount</span>
+                    <span className="tabular-nums">₹{monthly.totalSalesAmount.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total Boxes Sold</span>
+                    <span className="tabular-nums">{monthly.totalBoxesSold}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-destructive">Total Pending</span>
+                    <span className="tabular-nums text-destructive">₹{monthly.totalPending.toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-border/60 pt-4">
+                  <h3 className="text-sm font-semibold mb-2">Product Sales</h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-left text-muted-foreground">
+                        <th className="py-2 pr-2 font-medium">Product</th>
+                        <th className="py-2 pr-2 font-medium">Size</th>
+                        <th className="py-2 font-medium">Boxes Sold</th>
+                        <th className="py-2 font-medium">Amount (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monthly.productSales.map((r) => (
+                        <tr key={`${r.name}-${r.size}`} className="border-b border-border/40">
+                          <td className="py-2 pr-2">{r.name}</td>
+                          <td className="py-2 pr-2">{r.size}</td>
+                          <td className="py-2 pr-2 tabular-nums">{r.boxes}</td>
+                          <td className="py-2 pr-2 tabular-nums">₹{r.amount.toLocaleString("en-IN")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 border-t border-border/60 pt-4">
+                  <h3 className="text-sm font-semibold mb-2">Customer Sales</h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-left text-muted-foreground">
+                        <th className="py-2 pr-2 font-medium">Customer</th>
+                        <th className="py-2 font-medium">Boxes Sold</th>
+                        <th className="py-2 font-medium">Amount (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monthly.customerSales.map((r) => (
+                        <tr key={r.name} className="border-b border-border/40">
+                          <td className="py-2 pr-2">{r.name}</td>
+                          <td className="py-2 pr-2 tabular-nums">{r.boxes}</td>
+                          <td className="py-2 tabular-nums">₹{r.amount.toLocaleString("en-IN")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 border-t border-border/60 pt-4">
+                  <h3 className="text-sm font-semibold mb-2">Staff Delivery</h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-left text-muted-foreground">
+                        <th className="py-2 pr-2 font-medium">Staff</th>
+                        <th className="py-2 font-medium">Boxes Delivered</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monthly.staffDelivered.map((r) => (
+                        <tr key={r.name} className="border-b border-border/40">
+                          <td className="py-2 pr-2">{r.name}</td>
+                          <td className="py-2 tabular-nums">{r.boxes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4">
+                  <ReportCsvExport filename={monthlyFileName} rows={monthlyCsvRows} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

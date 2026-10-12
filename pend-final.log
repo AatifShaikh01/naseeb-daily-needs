@@ -1,0 +1,19 @@
+▲ Next.js 16.4.0 (Turbopack)
+- Local:         http://localhost:3700
+- Network:       http://10.122.77.218:3700
+- Environments: .env.local
+✓ Ready in 1896ms
+✓ Running next.config.ts took 167ms
+- Cache Components enabled
+- Partial Prefetching enabled
+
+ GET /login 200 in 2.5s (next.js: 1783ms, proxy.ts: 371ms, application-code: 324ms)
+⚠ Missing `origin` header from a forwarded Server Actions request.
+ POST /login 303 in 702ms (next.js: 15ms, proxy.ts: 16ms, application-code: 671ms)
+ GET /pending 200 in 1344ms (next.js: 729ms, proxy.ts: 34ms, application-code: 581ms)
+ GET /login 200 in 305ms (next.js: 57ms, proxy.ts: 10ms, application-code: 238ms)
+⚠ Missing `origin` header from a forwarded Server Actions request.
+ POST /login 303 in 277ms (next.js: 41ms, proxy.ts: 35ms, application-code: 201ms)
+ GET /pending 200 in 486ms (next.js: 35ms, proxy.ts: 13ms, application-code: 438ms)
+ GET /sales 200 in 2.9s (next.js: 2.6s, proxy.ts: 17ms, application-code: 270ms)
+[?25h

@@ -1,0 +1,7 @@
+Seeded 5 sales.
+Grouped pending:
+  ramesh store | 9876543210 => 3760.00
+  sri balaji |  => 300.00
+  hotel annapurna | 9123456780 => 0.00
+OK: Ramesh grouped (case+phone-insensitive) pending = 3760
+OK: Hotel excluded (0 pending)

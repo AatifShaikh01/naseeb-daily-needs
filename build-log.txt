@@ -1,0 +1,45 @@
+
+> naseeb-daily-needs@0.1.0 build
+> next build
+
+▲ Next.js 16.4.0 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 58ms
+- Cache Components enabled
+- Partial Prefetching enabled
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.8s
+  Running TypeScript ...
+  Finished TypeScript in 7.9s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/17) ...
+  Generating static pages using 3 workers (4/17) 
+  Generating static pages using 3 workers (8/17) 
+  Generating static pages using 3 workers (12/17) 
+✓ Generating static pages using 3 workers (17/17) in 1298ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /change-pin
+├ ○ /icon.svg
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /more
+├ ƒ /pending
+├ ƒ /products
+├ ƒ /reports
+├ ƒ /sale
+├ ƒ /sales
+├ ƒ /settings
+├ ƒ /stock
+└ ƒ /stock-in
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
