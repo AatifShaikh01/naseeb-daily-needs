@@ -15,7 +15,7 @@ export default async function HomePage() {
   // Request-time render — aaj ki date build-time par freeze na ho
   await connection();
   const today = todayIST();
-  const { stockInBoxes, deliveredBoxes, salesAmount, totalPending } = await getTodaySummary(today);
+  const { totalSalesAmount, deliveredBoxes, salesAmount, totalPending } = await getTodaySummary(today);
   const activity = await getTodayActivity(today);
   const productStock = await getProductStock();
   const salesData = await getLast7DaysSales(today);
@@ -23,7 +23,7 @@ export default async function HomePage() {
   const topPending = await getTopPendingCustomers(5);
 
   const stats = [
-    { label: "Stock In Today", value: stockInBoxes + " boxes", icon: Package, accentClass: "bg-primary/10 text-primary" },
+    { label: "Total Sales (overall)", value: "₹" + totalSalesAmount.toLocaleString("en-IN"), icon: Package, accentClass: "bg-primary/10 text-primary" },
     { label: "Delivered Today", value: deliveredBoxes + " boxes", icon: ShoppingCart, accentClass: "bg-secondary/10 text-secondary" },
     { label: "Today's Sales", value: "₹" + salesAmount.toLocaleString("en-IN"), icon: IndianRupee, accentClass: "bg-accent/15 text-accent-foreground" },
     { label: "Total Pending", value: "₹" + totalPending.toLocaleString("en-IN"), icon: Clock, accentClass: "bg-muted/15 text-muted-foreground" },
@@ -33,7 +33,7 @@ export default async function HomePage() {
     <>
       <PageHeader
         title="Dashboard"
-        description={`Today overview — stock in, delivered boxes, sales and pending payments (${formatDate(today)}).`}
+        description={`Today overview — overall sales, delivered boxes, sales and pending payments (${formatDate(today)}).`}
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -132,7 +132,7 @@ export default async function HomePage() {
         <CardContent>
           <div className="mb-3 flex flex-wrap gap-3 text-sm">
             <div className="text-muted-foreground">Today</div>
-            <div className="font-bold">₹{salesData[0]?.amount.toLocaleString("en-IN") ?? "0"}</div>
+            <div className="font-bold">₹{salesData[salesData.length - 1]?.amount.toLocaleString("en-IN") ?? "0"}</div>
             <div className="border-l border-border/60 ml-2 pl-2 text-muted-foreground">7-day total</div>
             <div className="font-bold">₹{salesData.reduce((sum, d) => sum + d.amount, 0).toLocaleString("en-IN")}</div>
           </div>

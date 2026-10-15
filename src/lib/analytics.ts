@@ -11,7 +11,7 @@ export const money = (v: string | number | null | undefined) =>
 
 /* ---------------- Today summary ---------------- */
 export type TodaySummary = {
-  stockInBoxes: number;
+  totalSalesAmount: number;
   deliveredBoxes: number;
   salesAmount: number;
   salesCount: number;
@@ -20,11 +20,12 @@ export type TodaySummary = {
 };
 
 export async function getTodaySummary(today = todayIST()): Promise<TodaySummary> {
-  const [stockInRows, deliveredRows, salesRows, pendingRows, payRows] = await Promise.all([
+  const [totalSalesRows, deliveredRows, salesRows, pendingRows, payRows] = await Promise.all([
     db
-      .select({ total: sql<string>`coalesce(sum(${stockIn.boxes}),0)` })
-      .from(stockIn)
-      .where(eq(stockIn.entryDate, today)),
+      .select({
+        total: sql<string>`coalesce(sum(${sales.totalAmount}),0)`,
+      })
+      .from(sales),
     db
       .select({ total: sql<string>`coalesce(sum(${saleItems.boxes}),0)` })
       .from(saleItems)
@@ -49,7 +50,7 @@ export async function getTodaySummary(today = todayIST()): Promise<TodaySummary>
   ]);
 
   return {
-    stockInBoxes: num(stockInRows[0]?.total),
+    totalSalesAmount: num(totalSalesRows[0]?.total),
     deliveredBoxes: num(deliveredRows[0]?.total),
     salesAmount: num(salesRows[0]?.total),
     salesCount: num(salesRows[0]?.count),
@@ -83,11 +84,23 @@ export async function getTodayActivity(today = todayIST()): Promise<ActivityItem
         createdAt: sales.createdAt,
         customerName: sales.customerName,
         totalAmount: sales.totalAmount,
-        boxes: sql<string>`coalesce((select sum(${saleItems.boxes}) from ${saleItems} where ${saleItems.saleId} = ${sales.id}),0)`,
       })
       .from(sales)
       .where(eq(sales.saleDate, today)),
   ]);
+
+  // Aaj ki sales ke boxes alag query me — subquery wala raw SQL
+  // Neon HTTP driver par 0 de raha tha, isliye JS me sum kar rahe hain
+  const saleIds = saleRows.map((s) => s.id);
+  const boxesBySale = new Map<number, number>();
+  if (saleIds.length > 0) {
+    const itemRows = await db
+      .select({ saleId: saleItems.saleId, boxes: saleItems.boxes })
+      .from(saleItems);
+    for (const it of itemRows) {
+      if (saleIds.includes(it.saleId)) boxesBySale.set(it.saleId, (boxesBySale.get(it.saleId) ?? 0) + it.boxes);
+    }
+  }
 
   const items: ActivityItem[] = [
     ...stockRows.map((r) => ({
@@ -104,7 +117,7 @@ export async function getTodayActivity(today = todayIST()): Promise<ActivityItem
       id: r.id,
       time: r.createdAt,
       customerName: r.customerName,
-      boxes: num(r.boxes),
+      boxes: boxesBySale.get(r.id) ?? 0,
       amount: num(r.totalAmount),
     })),
   ];
