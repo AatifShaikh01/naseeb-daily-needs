@@ -139,6 +139,71 @@ export const payments = pgTable("payments", {
   note: text("note").notNull().default(""),
 });
 
+/* Suppliers — maal khareedne wale (udhaar ledger ke liye) */
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/* Purchase direction: stock aaya ya supplier ko wapas gaya */
+export const purchaseDirectionEnum = pgEnum("purchase_direction", ["in", "return"]);
+
+/* Purchases — supplier se maal aaya (ya return gaya) */
+export const purchases = pgTable(
+  "purchases",
+  {
+    id: serial("id").primaryKey(),
+    entryDate: date("entry_date").notNull(),
+    supplierId: integer("supplier_id")
+      .notNull()
+      .references(() => suppliers.id),
+    direction: purchaseDirectionEnum("direction").notNull().default("in"),
+    totalAmount: numeric("total_amount", { precision: 12, scale: 2 })
+      .notNull()
+      .default("0"),
+    paidAmount: numeric("paid_amount", { precision: 12, scale: 2 })
+      .notNull()
+      .default("0"),
+    note: text("note").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("purchases_entry_date_idx").on(t.entryDate)],
+);
+
+/* Purchase Items — kaunsa product, kitne boxes, kis rate par */
+export const purchaseItems = pgTable("purchase_items", {
+  id: serial("id").primaryKey(),
+  purchaseId: integer("purchase_id")
+    .notNull()
+    .references(() => purchases.id, { onDelete: "cascade" }),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id),
+  boxes: integer("boxes").notNull(),
+  ratePerBox: numeric("rate_per_box", { precision: 10, scale: 2 }).notNull(),
+});
+
+/* Supplier Payments — supplier ko di gayi payment */
+export const supplierPayments = pgTable("supplier_payments", {
+  id: serial("id").primaryKey(),
+  purchaseId: integer("purchase_id").references(() => purchases.id, {
+    onDelete: "set null",
+  }),
+  supplierId: integer("supplier_id")
+    .notNull()
+    .references(() => suppliers.id),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paidOn: date("paid_on").notNull().default(sql`current_date`),
+  mode: paymentModeEnum("mode").notNull().default("cash"),
+  note: text("note").notNull().default(""),
+});
+
 /* TS types */
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
@@ -146,4 +211,8 @@ export type Staff = typeof staff.$inferSelect;
 export type Sale = typeof sales.$inferSelect;
 export type SaleItem = typeof saleItems.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
+export type Supplier = typeof suppliers.$inferSelect;
+export type Purchase = typeof purchases.$inferSelect;
+export type PurchaseItem = typeof purchaseItems.$inferSelect;
+export type SupplierPayment = typeof supplierPayments.$inferSelect;
 

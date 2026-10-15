@@ -2,6 +2,7 @@ import { LogOut, User } from "lucide-react";
 
 import { getSession, logoutAction } from "@/lib/actions/auth";
 import { APP_NAME } from "@/lib/navigation";
+import { SyncStatus } from "@/components/pwa/sync-status";
 
 /**
  * Top header — brand + logged-in user + logout.
@@ -30,6 +31,7 @@ export async function Header() {
 
         {session ? (
           <div className="flex shrink-0 items-center gap-2.5">
+            <SyncStatus />
             <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-background p-1.5 shadow-soft md:py-1.5 md:pl-1.5 md:pr-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
                 <User className="h-5 w-5" />

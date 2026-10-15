@@ -6,12 +6,10 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, TriangleAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  createSaleAction,
-  updateSaleAction,
-  getCustomerSuggestions,
-  type ActionResult,
-} from "@/lib/actions/sales";
+import { createSaleAction, updateSaleAction } from "@/lib/actions/sales";
+import { getCustomerSuggestions, getLastRate } from "@/lib/actions/sales";
+import type { ActionResult } from "@/lib/actions/sales";
+import { enqueueOutbox } from "@/lib/outbox";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
 
@@ -91,6 +89,10 @@ function SaleFormFields({
   const [showSug, setShowSug] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /* rate history — customer+product ka last rate (hint ke liye) */
+  const [lastRates, setLastRates] = useState<Record<number, { rate: number; date: string }>>({});
+  const lastRateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /* header */
   const [saleDate, setSaleDate] = useState(sale?.saleDate ?? today);
   const [deliveredBy, setDeliveredBy] = useState<number>(sale?.deliveredBy ?? staff[0]?.id ?? 0);
@@ -167,6 +169,29 @@ function SaleFormFields({
     setName(v);
     setShowSug(true);
     fetchSuggestions(v);
+    // Rate history: is customer ko har row ke product ka last rate kya diya tha
+    if (lastRateTimer.current) clearTimeout(lastRateTimer.current);
+    const cname = v.trim();
+    if (!cname) {
+      setLastRates({});
+      return;
+    }
+    lastRateTimer.current = setTimeout(async () => {
+      try {
+        const entries = await Promise.all(
+          rows.map(async (r) => ({ pid: r.productId, hit: await getLastRate(cname, r.productId) })),
+        );
+        setLastRates((prev) => {
+          const next = { ...prev };
+          for (const e of entries) {
+            if (e.hit) next[e.pid] = e.hit;
+          }
+          return next;
+        });
+      } catch {
+        /* offline — ignore */
+      }
+    }, 500);
   };
 
   const chooseSuggestion = (s: { name: string; phone: string | null }) => {
@@ -206,7 +231,29 @@ function SaleFormFields({
   );
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (!editing && typeof navigator !== "undefined" && !navigator.onLine) {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          enqueueOutbox("sale", `${name.trim() || "Sale"} — ₹${totalAmount.toFixed(0)}`, {
+            saleDate: String(fd.get("saleDate") ?? today),
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            deliveredBy: String(deliveredBy),
+            paymentStatus: status,
+            paidAmount: status === "partial" ? paidInput || "0" : status === "paid" ? totalAmount.toFixed(2) : "0",
+            note,
+            items: itemsPayload,
+          });
+          toast.warning("Offline — sale saved on device, will sync later");
+          router.push("/sales");
+          onCreated();
+        }
+      }}
+      className="space-y-5"
+    >
       {editing ? <input type="hidden" name="id" value={sale!.id} /> : null}
       <input type="hidden" name="items" value={itemsPayload} />
       <input type="hidden" name="saleDate" value={saleDate} />
@@ -351,6 +398,11 @@ function SaleFormFields({
             {lowStockRows.some((r) => r.key === row.key) ? (
               <p className="flex items-center gap-1 text-xs font-medium text-destructive">
                 <TriangleAlert className="h-3.5 w-3.5" /> Only {productMap.get(row.productId)?.stockBalance ?? 0} in stock
+              </p>
+            ) : null}
+            {lastRates[row.productId] && !row.rateTouched ? (
+              <p className="text-xs text-muted-foreground">
+                Last rate for {name.trim() || "this customer"}: ₹{lastRates[row.productId].rate.toFixed(2)}
               </p>
             ) : null}
           </div>

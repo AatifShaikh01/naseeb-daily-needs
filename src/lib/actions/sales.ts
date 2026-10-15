@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, ilike } from "drizzle-orm";
+import { and, eq, ilike, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -199,4 +199,32 @@ export async function getCustomerSuggestions(
     .limit(8);
 
   return rows.map((r) => ({ name: r.name, phone: r.phone }));
+}
+
+/** Rate history — us customer ko us product ka last rate kya diya tha. */
+export async function getLastRate(
+  customerName: string,
+  productId: number,
+): Promise<{ rate: number; date: string } | null> {
+  const session = await getSession();
+  if (!session) return null;
+
+  const name = customerName.trim();
+  if (!name || !productId) return null;
+
+  const rows = await db
+    .select({ rate: saleItems.ratePerBox, date: sales.saleDate })
+    .from(saleItems)
+    .innerJoin(sales, eq(saleItems.saleId, sales.id))
+    .where(
+      and(
+        sql`lower(trim(${sales.customerName})) = lower(trim(${name}))`,
+        eq(saleItems.productId, productId),
+      ),
+    )
+    .orderBy(sql`${sales.saleDate} desc, ${sales.id} desc`)
+    .limit(1);
+
+  if (!rows[0]) return null;
+  return { rate: Number(rows[0].rate), date: rows[0].date };
 }

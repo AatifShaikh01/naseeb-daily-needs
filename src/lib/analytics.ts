@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 
-import { db, payments, products, saleItems, sales, staff, stockIn } from "@/db";
+import { db, payments, products, purchaseItems, purchases, saleItems, sales, staff, stockIn, supplierPayments, suppliers } from "@/db";
 import { addDays, todayIST } from "@/lib/dates";
 import { lowStockThreshold } from "@/lib/config";
 
@@ -318,6 +318,82 @@ export async function getDailyReport(date: string): Promise<DailyReport> {
   };
 }
 
+/* ---------------- Daily closing / hisaab ---------------- */
+export type ClosingSummary = {
+  date: string;
+  cashIn: number;
+  upiIn: number;
+  bankIn: number;
+  totalIn: number;
+  supplierOut: number;
+  netCash: number;
+  salesAmount: number;
+  salesCount: number;
+  boxesSold: number;
+  boxesStockIn: number;
+  pendingToday: number;
+};
+
+export async function getClosingSummary(date = todayIST()): Promise<ClosingSummary> {
+  const [payRows, supRows, saleRows, itemRows, stockRows, pendRows] = await Promise.all([
+    db
+      .select({
+        mode: payments.mode,
+        total: sql<string>`coalesce(sum(${payments.amount}),0)`,
+      })
+      .from(payments)
+      .where(eq(payments.paidOn, date))
+      .groupBy(payments.mode),
+    db
+      .select({ total: sql<string>`coalesce(sum(${supplierPayments.amount}),0)` })
+      .from(supplierPayments)
+      .where(eq(supplierPayments.paidOn, date)),
+    db
+      .select({
+        count: sql<string>`count(*)`,
+        amount: sql<string>`coalesce(sum(${sales.totalAmount}),0)`,
+        pending: sql<string>`coalesce(sum(${sales.totalAmount} - ${sales.paidAmount}),0)`,
+      })
+      .from(sales)
+      .where(eq(sales.saleDate, date)),
+    db
+      .select({ boxes: sql<string>`coalesce(sum(${saleItems.boxes}),0)` })
+      .from(saleItems)
+      .innerJoin(sales, eq(saleItems.saleId, sales.id))
+      .where(eq(sales.saleDate, date)),
+    db
+      .select({ boxes: sql<string>`coalesce(sum(${stockIn.boxes}),0)` })
+      .from(stockIn)
+      .where(eq(stockIn.entryDate, date)),
+    db
+      .select({
+        total: sql<string>`coalesce(sum(${purchases.totalAmount} - ${purchases.paidAmount}),0)`,
+      })
+      .from(purchases),
+  ]);
+
+  const byMode = new Map(payRows.map((r) => [r.mode, num(r.total)]));
+  const cashIn = byMode.get("cash") ?? 0;
+  const upiIn = byMode.get("upi") ?? 0;
+  const bankIn = byMode.get("bank") ?? 0;
+  const totalIn = cashIn + upiIn + bankIn;
+  const supplierOut = num(supRows[0]?.total);
+
+  return {
+    date,
+    cashIn,
+    upiIn,
+    bankIn,
+    totalIn,
+    supplierOut,
+    netCash: totalIn - supplierOut,
+    salesAmount: num(saleRows[0]?.amount),
+    salesCount: num(saleRows[0]?.count),
+    boxesSold: num(itemRows[0]?.boxes),
+    boxesStockIn: num(stockRows[0]?.boxes),
+    pendingToday: num(saleRows[0]?.pending),
+  };
+}
 /* ---------------- Monthly report ---------------- */
 export type MonthlyReport = {
   month: string; // YYYY-MM

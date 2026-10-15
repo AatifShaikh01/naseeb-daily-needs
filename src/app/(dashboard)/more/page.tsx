@@ -1,4 +1,4 @@
-import { FileText, KeyRound, MoreHorizontal, Package, PackagePlus, Receipt, Settings } from "lucide-react";
+import { FileText, KeyRound, Landmark, MoreHorizontal, Package, PackagePlus, Receipt, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/auth";
@@ -31,6 +31,18 @@ const MORE_LINKS = [
     title: "Reports",
     href: "/reports",
     description: "Daily and monthly sales & stock reports with CSV export.",
+  },
+  {
+    icon: Landmark,
+    title: "Purchases",
+    href: "/purchases",
+    description: "Supplier purchases, rates and udhaar ledger.",
+  },
+  {
+    icon: Wallet,
+    title: "Daily Closing",
+    href: "/closing",
+    description: "Din bhar ka hisaab — cash in, supplier out, net cash.",
   },
   {
     icon: Settings,

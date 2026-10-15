@@ -87,6 +87,43 @@ export const customerPaymentSchema = z.object({
 });
 
 
+/** Supplier form ke liye. */
+export const supplierSchema = z.object({
+  name: z.string().trim().min(1, "Enter the supplier name").max(100),
+  phone: z
+    .union([z.literal(""), z.string().trim().regex(/^[0-9+\-\s]{6,15}$/, "Enter a valid phone number")])
+    .nullable()
+    .optional(),
+});
+
+/** Purchase item line. */
+export const purchaseItemSchema = z.object({
+  productId: z.coerce.number().int().positive("Select a product for each row"),
+  boxes: z.coerce.number().int().min(1, "At least 1 box").max(100000),
+  ratePerBox: z.coerce.number().min(0, "Rate cannot be negative").max(1000000),
+});
+
+/** Purchase create form ke liye. */
+export const purchaseSchema = z.object({
+  entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  supplierId: z.coerce.number().int().positive("Select a supplier"),
+  direction: z.enum(["in", "return"]),
+  paymentStatus: z.enum(["paid", "pending", "partial"]),
+  paidAmount: z.coerce.number().min(0, "Amount cannot be negative").max(100000000),
+  note: z.union([z.literal(""), z.string().trim().max(300)]).nullable().optional(),
+  items: z.array(purchaseItemSchema).min(1, "Add at least one product").max(100, "Max 100 rows"),
+});
+
+/** Supplier-level payment. */
+export const supplierPaymentSchema = z.object({
+  supplierId: z.coerce.number().int().positive("Supplier not found"),
+  amount: z.coerce.number().positive("Enter an amount").max(100000000),
+  paidOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  mode: z.enum(["cash", "upi", "bank"]),
+  note: z.union([z.literal(""), z.string().trim().max(200)]).nullable().optional(),
+});
+
+
 /** Zod error se pehla message nikaalo (UI me dikhane ke liye). */
 export function firstError(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Invalid input — please check again.";
