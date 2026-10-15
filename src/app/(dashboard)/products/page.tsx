@@ -10,7 +10,6 @@ import { db, products } from "@/db";
 
 export const metadata = { title: "Products" };
 
-export const instant = false;
 
 export default async function ProductsPage({
   searchParams,

@@ -6,7 +6,6 @@ import { db, payments, products, saleItems, sales, staff } from "@/db";
 import { todayIST } from "@/lib/dates";
 
 export const metadata = { title: "Pending" };
-export const instant = false;
 
 type ItemLine = {
   productId: number;

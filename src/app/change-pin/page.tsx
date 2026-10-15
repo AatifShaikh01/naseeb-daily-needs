@@ -6,9 +6,6 @@ import { getSession } from "@/lib/actions/auth";
 
 export const metadata: Metadata = { title: "Change PIN" };
 
-// Session (cookies) use hota hai — prerender nahi hoga.
-export const instant = false;
-
 export default async function ChangePinPage() {
   const session = await getSession();
 

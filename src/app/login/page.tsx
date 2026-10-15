@@ -5,9 +5,6 @@ import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = { title: "Login" };
 
-// Login page par searchParams aata hai — prerender nahi hoga.
-export const instant = false;
-
 export default async function LoginPage({
   searchParams,
 }: {

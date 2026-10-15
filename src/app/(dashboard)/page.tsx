@@ -1,5 +1,6 @@
 import { IndianRupee, Package, Clock, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { connection } from "next/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,32 @@ const formatTime = (date: Date) =>
 
 const boxLabel = (n: number) => `${n} ${n === 1 ? "box" : "boxes"}`;
 
-export default async function HomePage() {
+export default function HomePage() {
+  // Static shell — route prerender ho sake. Saara runtime data
+  // (connection + DB queries) DashboardContent me hai, jo layout
+  // wale <Suspense> ke andar render hota hai.
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3" aria-hidden>
+      <div className="h-8 w-48 rounded-xl bg-muted" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-20 rounded-2xl bg-muted" />
+        ))}
+      </div>
+      <div className="h-48 rounded-2xl bg-muted" />
+    </div>
+  );
+}
+
+async function DashboardContent() {
   // Request-time render — aaj ki date build-time par freeze na ho
   await connection();
   const today = todayIST();

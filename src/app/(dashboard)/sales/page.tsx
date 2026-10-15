@@ -9,7 +9,6 @@ import { todayIST } from "@/lib/dates";
 
 export const metadata = { title: "Sales" };
 
-export const instant = false;
 
 export default async function SalesPage({
   searchParams,

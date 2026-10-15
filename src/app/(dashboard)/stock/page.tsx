@@ -1,4 +1,4 @@
-﻿import { asc, sql } from "drizzle-orm";
+import { asc, sql } from "drizzle-orm";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,6 @@ import { lowStockThreshold } from "@/lib/config";
 
 export const metadata = { title: "Current Stock" };
 
-export const instant = false;
 
 export default async function StockPage() {
   const threshold = lowStockThreshold();
@@ -16,7 +15,7 @@ export default async function StockPage() {
   /* Products (order by id) */
   const productRows = await db.select().from(products).orderBy(asc(products.id));
 
-  /* Balance = total stock in âˆ’ total sold, per product */
+  /* Balance = total stock in − total sold, per product */
   const [inRows, soldByProduct] = await Promise.all([
     db
       .select({ productId: stockIn.productId, total: sql<string>`coalesce(sum(${stockIn.boxes}),0)` })
@@ -43,7 +42,7 @@ export default async function StockPage() {
     <>
       <PageHeader
         title="Current Stock"
-        description="Live balance per product â€” total received minus total sold."
+        description="Live balance per product — total received minus total sold."
       />
 
       {lowStockCount > 0 ? (
@@ -55,7 +54,7 @@ export default async function StockPage() {
       {balances.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            No products yet â€” add some from Products.
+            No products yet — add some from Products.
           </CardContent>
         </Card>
       ) : (
@@ -72,7 +71,7 @@ export default async function StockPage() {
                 </div>
                 <p className="mt-3 text-3xl font-bold leading-none">{b.balance}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  boxes Â· in {b.inB} âˆ’ sold {b.soldB}
+                  boxes · in {b.inB} − sold {b.soldB}
                 </p>
               </CardContent>
             </Card>

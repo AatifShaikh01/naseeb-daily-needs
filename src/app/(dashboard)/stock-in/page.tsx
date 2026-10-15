@@ -12,7 +12,6 @@ import { todayIST, formatDate } from "@/lib/dates";
 
 export const metadata = { title: "Stock In" };
 
-export const instant = false;
 
 export default async function StockInPage({
   searchParams,

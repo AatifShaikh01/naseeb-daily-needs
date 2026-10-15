@@ -11,7 +11,6 @@ import { db, staff } from "@/db";
 
 export const metadata = { title: "Settings" };
 
-export const instant = false;
 
 export default async function SettingsPage({
   searchParams,
