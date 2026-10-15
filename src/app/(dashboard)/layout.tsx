@@ -5,8 +5,8 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 
-// Session (cookies) ki wajah ye route statically prerender nahi hoga.
-export const instant = false;
+// Note: Header session ke liye cookies() padhta hai,
+// isliye ye layout cacheComponents mode me bhi request-time par render hota hai.
 
 /**
  * App shell: top header + desktop sidebar + mobile bottom nav.
