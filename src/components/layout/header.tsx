@@ -30,17 +30,16 @@ export async function Header() {
 
         {session ? (
           <div className="flex shrink-0 items-center gap-2.5">
-            <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-background py-1.5 pl-1.5 pr-4 shadow-soft">
+            <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-background p-1.5 shadow-soft md:py-1.5 md:pl-1.5 md:pr-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
                 <User className="h-5 w-5" />
               </div>
-              <div className="hidden leading-tight sm:block">
+              <div className="hidden leading-tight md:block">
                 <p className="text-sm font-bold">{session.name}</p>
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                   @{session.username}
                 </p>
               </div>
-              <p className="text-sm font-bold sm:hidden">{session.name}</p>
             </div>
             <form action={logoutAction}>
               <button
