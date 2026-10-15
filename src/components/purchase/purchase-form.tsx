@@ -6,7 +6,6 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createPurchaseAction } from "@/lib/actions/purchases";
-import { enqueueOutbox } from "@/lib/outbox";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
 
@@ -57,20 +56,6 @@ export function PurchaseForm({
     fd.set("direction", direction);
     fd.set("paymentStatus", status);
     fd.set("paidAmount", status === "partial" ? paidInput || "0" : "0");
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      enqueueOutbox("purchase", `Purchase — ₹${total.toFixed(0)}`, {
-        entryDate: String(fd.get("entryDate") ?? today),
-        supplierId: String(supplierId),
-        direction,
-        paymentStatus: status,
-        paidAmount: String(fd.get("paidAmount") ?? "0"),
-        note: String(fd.get("note") ?? ""),
-        items: itemsPayload,
-      });
-      toast.warning("Offline — purchase saved on device, will sync later");
-      router.refresh();
-      return;
-    }
     startTransition(async () => {
       const res = await createPurchaseAction(null, fd);
       if (res?.ok) {

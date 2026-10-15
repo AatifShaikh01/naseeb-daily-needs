@@ -9,7 +9,6 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -42,7 +41,6 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   NAV_ITEMS[2],
   { title: "Sales", href: "/sales", icon: Receipt },
   { title: "Purchases", href: "/purchases", icon: Landmark },
-  { title: "Closing", href: "/closing", icon: Wallet },
   { title: "Products", href: "/products", icon: Package },
   { title: "Reports", href: "/reports", icon: FileText },
   NAV_ITEMS[3],

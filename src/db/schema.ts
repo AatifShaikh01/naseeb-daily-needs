@@ -106,6 +106,7 @@ export const sales = pgTable(
     paidAmount: numeric("paid_amount", { precision: 12, scale: 2 })
       .notNull()
       .default("0"),
+    paymentMode: paymentModeEnum("payment_mode").notNull().default("cash"),
     note: text("note").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

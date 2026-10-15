@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { createSaleAction, updateSaleAction } from "@/lib/actions/sales";
 import { getCustomerSuggestions, getLastRate } from "@/lib/actions/sales";
 import type { ActionResult } from "@/lib/actions/sales";
-import { enqueueOutbox } from "@/lib/outbox";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
 
@@ -231,29 +230,7 @@ function SaleFormFields({
   );
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (!editing && typeof navigator !== "undefined" && !navigator.onLine) {
-          e.preventDefault();
-          const fd = new FormData(e.currentTarget);
-          enqueueOutbox("sale", `${name.trim() || "Sale"} — ₹${totalAmount.toFixed(0)}`, {
-            saleDate: String(fd.get("saleDate") ?? today),
-            customerName: name.trim(),
-            customerPhone: phone.trim(),
-            deliveredBy: String(deliveredBy),
-            paymentStatus: status,
-            paidAmount: status === "partial" ? paidInput || "0" : status === "paid" ? totalAmount.toFixed(2) : "0",
-            note,
-            items: itemsPayload,
-          });
-          toast.warning("Offline — sale saved on device, will sync later");
-          router.push("/sales");
-          onCreated();
-        }
-      }}
-      className="space-y-5"
-    >
+    <form action={formAction} className="space-y-5">
       {editing ? <input type="hidden" name="id" value={sale!.id} /> : null}
       <input type="hidden" name="items" value={itemsPayload} />
       <input type="hidden" name="saleDate" value={saleDate} />

@@ -58,6 +58,7 @@ export const saleSchema = z.object({
   deliveredBy: z.coerce.number().int().positive("Select who delivered"),
   paymentStatus: z.enum(["paid", "pending", "partial"]),
   paidAmount: z.coerce.number().min(0, "Amount cannot be negative").max(100000000),
+  paymentMode: z.enum(["cash", "upi", "bank"]).optional().default("cash"),
   note: z.union([z.literal(""), z.string().trim().max(300)]).nullable().optional(),
   items: z.array(saleItemSchema).min(1, "Add at least one product").max(100, "Max 100 rows"),
 });

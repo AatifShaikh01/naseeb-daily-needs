@@ -6,7 +6,6 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createStockEntriesAction } from "@/lib/actions/stock";
-import { enqueueOutbox } from "@/lib/outbox";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
 
@@ -46,16 +45,6 @@ export function StockForm({
       valid.map((r) => ({ productId: r.productId, boxes: r.boxes })),
     );
     fd.set("entries", entriesPayload);
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      enqueueOutbox("stock", `Stock in — ${valid.length} product${valid.length > 1 ? "s" : ""}`, {
-        entryDate: String(fd.get("entryDate") ?? today),
-        note: String(fd.get("note") ?? ""),
-        entries: entriesPayload,
-      });
-      toast.warning("Offline — stock entry saved on device, will sync later");
-      router.refresh();
-      return;
-    }
     startTransition(async () => {
       const res = await createStockEntriesAction(null, fd);
       if (res?.ok) {

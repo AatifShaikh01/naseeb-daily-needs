@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, ilike, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -57,12 +57,13 @@ export async function createSaleAction(
     deliveredBy: formData.get("deliveredBy"),
     paymentStatus: formData.get("paymentStatus"),
     paidAmount: formData.get("paidAmount") ?? 0,
+    paymentMode: formData.get("paymentMode") ?? "cash",
     note: String(formData.get("note") ?? "").trim() || null,
     items,
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, note } =
+  const { saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, paymentMode, note } =
     parsed.data;
   const { totalRounded, paid } = resolveAmounts(items, paymentStatus, Number(paidAmount));
 
@@ -76,6 +77,7 @@ export async function createSaleAction(
       paymentStatus,
       totalAmount: totalRounded.toFixed(2),
       paidAmount: paid.toFixed(2),
+      paymentMode,
       note: note ?? "",
     })
     .returning({ id: sales.id });
@@ -94,7 +96,7 @@ export async function createSaleAction(
       saleId: row.id,
       amount: paid.toFixed(2),
       paidOn: saleDate,
-      mode: "cash",
+      mode: paymentMode,
       note: paymentStatus === "paid" ? "Paid in full" : "Part payment",
     });
   }
@@ -126,12 +128,13 @@ export async function updateSaleAction(
     deliveredBy: formData.get("deliveredBy"),
     paymentStatus: formData.get("paymentStatus"),
     paidAmount: formData.get("paidAmount") ?? 0,
+    paymentMode: formData.get("paymentMode") ?? "cash",
     note: String(formData.get("note") ?? "").trim() || null,
     items,
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, note } =
+  const { saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, paymentMode, note } =
     parsed.data;
   const { totalRounded, paid } = resolveAmounts(items, paymentStatus, Number(paidAmount));
 
@@ -145,6 +148,7 @@ export async function updateSaleAction(
       paymentStatus,
       totalAmount: totalRounded.toFixed(2),
       paidAmount: paid.toFixed(2),
+      paymentMode,
       note: note ?? "",
     })
     .where(eq(sales.id, id));
@@ -158,6 +162,30 @@ export async function updateSaleAction(
       ratePerBox: it.ratePerBox.toFixed(2),
     })),
   );
+
+  // Payments sync — sirf auto-created rows (sale-time) update; pending page ki
+  // manual collections untouched rehti hain.
+  const autoNotes = ["Paid in full", "Part payment"];
+  const existing = await db
+    .select({ amount: payments.amount, note: payments.note })
+    .from(payments)
+    .where(eq(payments.saleId, id));
+  const manualSum = existing
+    .filter((p) => !autoNotes.includes(p.note))
+    .reduce((s, p) => s + Number(p.amount), 0);
+  await db
+    .delete(payments)
+    .where(and(eq(payments.saleId, id), inArray(payments.note, autoNotes)));
+  const autoAmount = Math.max(0, Math.round((paid - manualSum) * 100) / 100);
+  if (autoAmount > 0) {
+    await db.insert(payments).values({
+      saleId: id,
+      amount: autoAmount.toFixed(2),
+      paidOn: saleDate,
+      mode: paymentMode,
+      note: paymentStatus === "paid" ? "Paid in full" : "Part payment",
+    });
+  }
 
   revalidatePath("/sale");
   revalidatePath("/sales");
