@@ -1,0 +1,1 @@
+ALTER TABLE "sales" ADD COLUMN IF NOT EXISTS "payment_mode" "payment_mode" DEFAULT 'cash' NOT NULL;

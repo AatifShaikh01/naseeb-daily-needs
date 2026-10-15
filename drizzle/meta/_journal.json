@@ -15,6 +15,13 @@
       "when": 1792088939631,
       "tag": "0001_add-suppliers-purchases",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792092762498,
+      "tag": "0002_add-sales-payment-mode",
+      "breakpoints": true
     }
   ]
 }

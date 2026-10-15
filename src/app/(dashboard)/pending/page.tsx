@@ -6,6 +6,8 @@ import { db, payments, products, saleItems, sales, staff } from "@/db";
 import { todayIST } from "@/lib/dates";
 
 export const metadata = { title: "Pending" };
+// DB-backed live page — build time pe prerender mat karo (data hamesha fresh chahiye).
+export const dynamic = "force-dynamic";
 
 type ItemLine = {
   productId: number;
