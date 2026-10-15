@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { downloadCsv } from "@/lib/csv";
 
 /** Server component passes CSV rows; button triggers browser download. */
@@ -21,8 +22,13 @@ export function ReportCsvExport({
   );
 }
 
-/** Monthly report ka formatted PDF — alag print-only layout kholke print dialog.
- *  User "Save as PDF" chune to saaf-suthra A4 PDF mil jayega. */
+type Totals = { totalSalesAmount: number; totalBoxesSold: number; totalPending: number };
+type PRow = { name: string; size: string; boxes: number; amount: number };
+type CRow = { name: string; boxes: number; amount: number };
+type SRow = { name: string; boxes: number };
+
+/** Monthly report ka formatted PDF — DIRECT download, koi print dialog nahi.
+ *  Text bada rakha hai (12-22pt) taaki phone/print dono me saaf dikhe. */
 export function MonthlyPdfExport({
   monthLabel,
   totals,
@@ -31,71 +37,129 @@ export function MonthlyPdfExport({
   staffDelivered,
 }: {
   monthLabel: string;
-  totals: { totalSalesAmount: number; totalBoxesSold: number; totalPending: number };
-  productSales: { name: string; size: string; boxes: number; amount: number }[];
-  customerSales: { name: string; boxes: number; amount: number }[];
-  staffDelivered: { name: string; boxes: number }[];
+  totals: Totals;
+  productSales: PRow[];
+  customerSales: CRow[];
+  staffDelivered: SRow[];
 }) {
-  const onPrint = () => {
-    const inr = (n: number) => `Rs.${n.toLocaleString("en-IN")}`;
-    const row = (cells: string[]) =>
-      `<tr>${cells.map((c, i) => `<td class="${i > 0 ? "num" : ""}">${c}</td>`).join("")}</tr>`;
-    const table = (heads: string[], body: string) =>
-      `<table><thead><tr>${heads.map((h, i) => `<th class="${i > 0 ? "num" : ""}">${h}</th>`).join("")}</tr></thead><tbody>${body || `<tr><td colspan="${heads.length}" class="muted">No data</td></tr>`}</tbody></table>`;
+  const [busy, setBusy] = useState(false);
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Monthly Report — ${monthLabel}</title><style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;font-size:12px}
-      .head{border-bottom:3px solid #0F766E;padding-bottom:12px;margin-bottom:16px}
-      .head h1{font-size:20px;color:#0F766E}
-      .head p{color:#555;margin-top:4px}
-      .cards{display:flex;gap:12px;margin:16px 0}
-      .card{flex:1;border:1px solid #ddd;border-radius:8px;padding:10px 12px}
-      .card .lbl{font-size:11px;color:#666}
-      .card .val{font-size:16px;font-weight:bold;margin-top:2px}
-      h2{font-size:14px;margin:20px 0 8px;color:#0F766E}
-      table{width:100%;border-collapse:collapse;margin-top:4px}
-      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:12px}
-      th{background:#0F766E;color:#fff}
-      tr:nth-child(even) td{background:#f6faf9}
-      .num{text-align:right;font-variant-numeric:tabular-nums}
-      .muted{color:#777;text-align:center}
-      .foot{margin-top:20px;color:#777;font-size:11px;border-top:1px solid #ddd;padding-top:8px}
-      @media print{body{padding:0}}
-    </style></head><body>
-      <div class="head"><h1>Naseeb Daily Needs &amp; Agencies</h1><p>Monthly Sales Report — ${monthLabel}</p></div>
-      <div class="cards">
-        <div class="card"><div class="lbl">Total Sales</div><div class="val">${inr(totals.totalSalesAmount)}</div></div>
-        <div class="card"><div class="lbl">Total Boxes Sold</div><div class="val">${totals.totalBoxesSold}</div></div>
-        <div class="card"><div class="lbl">Total Pending</div><div class="val">${inr(totals.totalPending)}</div></div>
-      </div>
-      <h2>Product-wise Sales</h2>
-      ${table(["Product", "Size", "Boxes", "Amount"], productSales.map((r) => row([`${r.name}`, `${r.size}`, `${r.boxes}`, inr(r.amount)])).join(""))}
-      <h2>Customer-wise Sales</h2>
-      ${table(["Customer", "Boxes", "Amount"], customerSales.map((r) => row([`${r.name}`, `${r.boxes}`, inr(r.amount)])).join(""))}
-      <h2>Staff Delivery</h2>
-      ${table(["Staff", "Boxes Delivered"], staffDelivered.map((r) => row([`${r.name}`, `${r.boxes}`])).join(""))}
-      <div class="foot">Generated on ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST · Naseeb Daily Needs &amp; Agencies</div>
-    </body></html>`;
+  const onDownload = async () => {
+    try {
+      setBusy(true);
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
 
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    // Content load hone ke baad print dialog
-    w.onload = () => {
-      w.print();
-    };
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const green: [number, number, number] = [15, 118, 110];
+      const inr = (n: number) => `Rs.${n.toLocaleString("en-IN")}`;
+
+      // Header
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(green[0], green[1], green[2]);
+      doc.text("Naseeb Daily Needs & Agencies", 40, 52);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(14);
+      doc.setTextColor(90, 90, 90);
+      doc.text(`Monthly Sales Report - ${monthLabel}`, 40, 74);
+      doc.setDrawColor(green[0], green[1], green[2]);
+      doc.setLineWidth(2.5);
+      doc.line(40, 84, pageW - 40, 84);
+
+      // Summary cards
+      let y = 102;
+      const cardW = (pageW - 80 - 20) / 3;
+      const cards: [string, string][] = [
+        ["Total Sales", inr(totals.totalSalesAmount)],
+        ["Total Boxes Sold", String(totals.totalBoxesSold)],
+        ["Total Pending", inr(totals.totalPending)],
+      ];
+      cards.forEach(([lbl, val], i) => {
+        const x = 40 + i * (cardW + 10);
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(1);
+        doc.roundedRect(x, y, cardW, 58, 6, 6);
+        doc.setTextColor(110, 110, 110);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(lbl, x + 10, y + 22);
+        doc.setTextColor(20, 20, 20);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(val, x + 10, y + 44);
+      });
+      y += 78;
+
+      const base = {
+        styles: { fontSize: 13, cellPadding: 9 },
+        headStyles: { fillColor: green, textColor: 255, fontSize: 13, fontStyle: "bold" as const },
+        alternateRowStyles: { fillColor: [246, 250, 249] as [number, number, number] },
+        margin: { left: 40, right: 40 },
+      };
+      const lastY = () =>
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+
+      const section = (title: string, head: string[], body: string[][]) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(green[0], green[1], green[2]);
+        if (y > doc.internal.pageSize.getHeight() - 140) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.text(title, 40, y);
+        autoTable(doc, {
+          ...base,
+          startY: y + 10,
+          head: [head],
+          body: body.length > 0 ? body : [head.map(() => "No data")],
+        });
+        y = lastY() + 30;
+      };
+
+      section(
+        "Product-wise Sales",
+        ["Product", "Size", "Boxes", "Amount"],
+        productSales.map((r) => [r.name, r.size, String(r.boxes), inr(r.amount)]),
+      );
+      section(
+        "Customer-wise Sales",
+        ["Customer", "Boxes", "Amount"],
+        customerSales.map((r) => [r.name, String(r.boxes), inr(r.amount)]),
+      );
+      section(
+        "Staff Delivery",
+        ["Staff", "Boxes Delivered"],
+        staffDelivered.map((r) => [r.name, String(r.boxes)]),
+      );
+
+      const gen = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(140, 140, 140);
+      doc.text(
+        `Generated on ${gen} IST - Naseeb Daily Needs & Agencies`,
+        40,
+        doc.internal.pageSize.getHeight() - 30,
+      );
+
+      const fileMonth = monthLabel.replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
+      doc.save(`naseeb-monthly-report-${fileMonth}.pdf`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <button
       type="button"
-      onClick={onPrint}
-      className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+      onClick={onDownload}
+      disabled={busy}
+      className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
     >
-      Download PDF
+      {busy ? "Preparing PDF..." : "Download PDF"}
     </button>
   );
 }
