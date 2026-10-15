@@ -9,7 +9,9 @@ import { todayIST, formatDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/page-header";
 
 const formatTime = (date: Date) =>
-  date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
+
+const boxLabel = (n: number) => `${n} ${n === 1 ? "box" : "boxes"}`;
 
 export default async function HomePage() {
   // Request-time render — aaj ki date build-time par freeze na ho
@@ -79,8 +81,8 @@ export default async function HomePage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {item.kind === "stock"
-                        ? `${item.boxes} boxes${item.note ? " — " + item.note : ""}`
-                        : `${item.boxes} boxes — ₹${item.amount.toLocaleString("en-IN")}`}
+                        ? `${boxLabel(item.boxes)}${item.note ? " — " + item.note : ""}`
+                        : `${boxLabel(item.boxes)} — ₹${item.amount.toLocaleString("en-IN")}`}
                     </p>
                   </div>
                   <div className="shrink-0 text-xs text-muted-foreground">{formatTime(item.time)}</div>
