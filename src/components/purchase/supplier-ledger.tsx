@@ -195,7 +195,8 @@ export async function SupplierLedger({ suppliers }: { suppliers: { id: number; n
                   </div>
                 </div>
               </details>
-              <SupplierPayDialog supplierId={s.id} supplierName={s.name} due={due} />
+              {/* Show the pay button only when something is due — hidden for cleared suppliers (and when in advance) */}
+              {due > 0 ? <SupplierPayDialog supplierId={s.id} supplierName={s.name} due={due} /> : null}
             </CardContent>
           </Card>
         );
