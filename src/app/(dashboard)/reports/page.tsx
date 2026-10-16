@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 import { getDailyReport, getMonthlyReport } from "@/lib/analytics";
 import { todayIST } from "@/lib/dates";
-import { ReportCsvExport, MonthlyPdfExport } from "@/components/reports/report-export";
+import { ReportCsvExport, MonthlyPdfExport, DailyPdfExport } from "@/components/reports/report-export";
 
 export default async function ReportsPage({
   searchParams,
@@ -156,8 +156,20 @@ export default async function ReportsPage({
                   </table>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <ReportCsvExport filename={dailyFileName} rows={dailyCsvRows} />
+                  <DailyPdfExport
+                    date={daily.date}
+                    summary={{
+                      stockInBoxes: daily.stockInBoxes,
+                      salesBoxes: daily.salesBoxes,
+                      salesCount: daily.salesCount,
+                      salesAmount: daily.salesAmount,
+                      paymentsReceived: daily.paymentsReceived,
+                      pendingAtDate: daily.pendingAtDate,
+                    }}
+                    stockInRows={daily.stockInRows}
+                  />
                 </div>
               </CardContent>
             </Card>

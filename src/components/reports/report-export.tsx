@@ -163,3 +163,153 @@ export function MonthlyPdfExport({
     </button>
   );
 }
+
+type DailySummary = {
+  stockInBoxes: number;
+  salesBoxes: number;
+  salesCount: number;
+  salesAmount: number;
+  paymentsReceived: number;
+  pendingAtDate: number;
+};
+
+/** Daily report ka formatted PDF — DIRECT download, monthly report jaisa hi clean layout.
+ *  Summary cards (2 rows x 3) + product-wise stock-in table. */
+export function DailyPdfExport({
+  date,
+  summary,
+  stockInRows,
+}: {
+  date: string;
+  summary: DailySummary;
+  stockInRows: { productName: string; size: string; boxes: number }[];
+}) {
+  const [busy, setBusy] = useState(false);
+
+  const onDownload = async () => {
+    try {
+      setBusy(true);
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const green: [number, number, number] = [15, 118, 110];
+      const inr = (n: number) => `Rs.${n.toLocaleString("en-IN")}`;
+
+      // "YYYY-MM-DD" -> "Friday, 16 October 2026" (invalid date pe raw string)
+      const parts = date.split("-").map(Number);
+      const dateLabel =
+        parts.length === 3 && parts.every((n) => Number.isFinite(n))
+          ? new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString("en-IN", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })
+          : date;
+
+      // Header
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(green[0], green[1], green[2]);
+      doc.text("Naseeb Daily Needs & Agencies", 40, 52);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(14);
+      doc.setTextColor(90, 90, 90);
+      doc.text(`Daily Report - ${dateLabel}`, 40, 74);
+      doc.setDrawColor(green[0], green[1], green[2]);
+      doc.setLineWidth(2.5);
+      doc.line(40, 84, pageW - 40, 84);
+
+      // Summary cards — 2 rows x 3
+      let y = 102;
+      const cardW = (pageW - 80 - 20) / 3;
+      const cardRows: [string, string][][] = [
+        [
+          ["Sales Amount", inr(summary.salesAmount)],
+          ["Payments Received", inr(summary.paymentsReceived)],
+          ["Pending at Date", inr(summary.pendingAtDate)],
+        ],
+        [
+          ["Sales Boxes", String(summary.salesBoxes)],
+          ["Sales Count", String(summary.salesCount)],
+          ["Stock In Boxes", String(summary.stockInBoxes)],
+        ],
+      ];
+      cardRows.forEach((row, ri) => {
+        row.forEach(([lbl, val], i) => {
+          const x = 40 + i * (cardW + 10);
+          const cy = y + ri * 68;
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(1);
+          doc.roundedRect(x, cy, cardW, 58, 6, 6);
+          doc.setTextColor(110, 110, 110);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(12);
+          doc.text(lbl, x + 10, cy + 22);
+          doc.setTextColor(20, 20, 20);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.text(val, x + 10, cy + 44);
+        });
+      });
+      y += 146;
+
+      const base = {
+        styles: { fontSize: 13, cellPadding: 9 },
+        headStyles: { fillColor: green, textColor: 255, fontSize: 13, fontStyle: "bold" as const },
+        alternateRowStyles: { fillColor: [246, 250, 249] as [number, number, number] },
+        margin: { left: 40, right: 40 },
+      };
+      const lastY = () =>
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+
+      const section = (title: string, head: string[], body: string[][]) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(green[0], green[1], green[2]);
+        if (y > pageH - 140) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.text(title, 40, y);
+        autoTable(doc, {
+          ...base,
+          startY: y + 10,
+          head: [head],
+          body: body.length > 0 ? body : [head.map(() => "No data")],
+        });
+        y = lastY() + 30;
+      };
+
+      section(
+        "Stock In - Product-wise",
+        ["Product", "Size", "Boxes"],
+        stockInRows.map((r) => [r.productName, r.size, String(r.boxes)]),
+      );
+
+      const gen = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(140, 140, 140);
+      doc.text(`Generated on ${gen} IST - Naseeb Daily Needs & Agencies`, 40, pageH - 30);
+
+      doc.save(`naseeb-daily-report-${date}.pdf`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onDownload}
+      disabled={busy}
+      className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+    >
+      {busy ? "Preparing PDF..." : "Download PDF"}
+    </button>
+  );
+}
