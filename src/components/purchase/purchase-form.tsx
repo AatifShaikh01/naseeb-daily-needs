@@ -35,7 +35,7 @@ export function PurchaseForm({
   const [nextKey, setNextKey] = useState(2);
 
   const addRow = () => {
-    // Bulk entry me aksar sab items ka rate same hota hai — pichhle row ka rate copy karo
+    // In bulk entries all items often share the same rate — copy the previous row's rate
     const lastRate = rows[rows.length - 1]?.rateText ?? "";
     setRows((r) => [...r, { key: nextKey, productId: products[0]?.id ?? 0, boxes: 1, rateText: lastRate }]);
     setNextKey((k) => k + 1);
@@ -53,13 +53,13 @@ export function PurchaseForm({
     const fd = new FormData(e.currentTarget);
     const filled = rows.filter((r) => r.productId > 0 && r.boxes >= 1);
     if (!filled.length) {
-      toast.error("At least ek product add karein");
+      toast.error("Add at least one product");
       return;
     }
-    // Rate blank ya 0 mat hone do — warna purchase ₹0 me save ho jayega (pehle yahi hua tha)
+    // Don't allow a blank/0 rate — the purchase would silently save as ₹0 (that's what happened before)
     const badIdx = filled.findIndex((r) => !r.rateText.trim() || (Number(r.rateText) || 0) <= 0);
     if (badIdx >= 0) {
-      toast.error(`Item ${rows.indexOf(filled[badIdx]) + 1}: rate (per box) 0 se zyada enter karein`);
+      toast.error(`Item ${rows.indexOf(filled[badIdx]) + 1}: enter a rate per box greater than 0`);
       return;
     }
     const itemsPayload = JSON.stringify(filled.map((r) => ({ productId: r.productId, boxes: r.boxes, ratePerBox: Number(r.rateText) || 0 })));

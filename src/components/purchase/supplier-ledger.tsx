@@ -119,7 +119,7 @@ export async function SupplierLedger({ suppliers }: { suppliers: { id: number; n
             <CardContent className="space-y-3">
               <details className="group rounded-xl border border-border/60">
                 <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-                  Poori history — maal, payments, balance
+                  Full history — stock, payments, balance
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="space-y-4 border-t border-border/60 px-3 py-3">
@@ -130,7 +130,7 @@ export async function SupplierLedger({ suppliers }: { suppliers: { id: number; n
                   </div>
 
                   <div>
-                    <h4 className="mb-2 text-sm font-semibold">Kab kitna saaman aaya</h4>
+                    <h4 className="mb-2 text-sm font-semibold">Purchases (what came and when)</h4>
                     {supPurchases.length ? (
                       <ul className="space-y-2">
                         {supPurchases.map((p) => {
@@ -158,7 +158,7 @@ export async function SupplierLedger({ suppliers }: { suppliers: { id: number; n
                                 <span>Total <b>{inr(Math.abs(Number(p.totalAmount)))}</b></span>
                                 <span>Paid <b>{inr(Math.abs(Number(p.paidAmount)))}</b></span>
                                 {bal > 0 ? (
-                                  <span className="font-semibold text-destructive">Baki {inr(bal)}</span>
+                                  <span className="font-semibold text-destructive">Due {inr(bal)}</span>
                                 ) : bal < 0 ? (
                                   <span className="font-semibold text-primary">Advance {inr(Math.abs(bal))}</span>
                                 ) : (
@@ -171,12 +171,12 @@ export async function SupplierLedger({ suppliers }: { suppliers: { id: number; n
                         })}
                       </ul>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Koi purchase record nahi hai.</p>
+                      <p className="text-xs text-muted-foreground">No purchases recorded yet.</p>
                     )}
                   </div>
 
                   <div>
-                    <h4 className="mb-2 text-sm font-semibold">Payments (kitna pay kiya)</h4>
+                    <h4 className="mb-2 text-sm font-semibold">Payments</h4>
                     {pays.length ? (
                       <ul className="divide-y divide-border/60 text-sm">
                         {pays.map((p) => (
@@ -190,7 +190,7 @@ export async function SupplierLedger({ suppliers }: { suppliers: { id: number; n
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Abhi tak koi payment nahi.</p>
+                      <p className="text-xs text-muted-foreground">No payments yet.</p>
                     )}
                   </div>
                 </div>
