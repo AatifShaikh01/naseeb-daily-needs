@@ -35,7 +35,9 @@ export function PurchaseForm({
   const [nextKey, setNextKey] = useState(2);
 
   const addRow = () => {
-    setRows((r) => [...r, { key: nextKey, productId: products[0]?.id ?? 0, boxes: 1, rateText: "" }]);
+    // Bulk entry me aksar sab items ka rate same hota hai — pichhle row ka rate copy karo
+    const lastRate = rows[rows.length - 1]?.rateText ?? "";
+    setRows((r) => [...r, { key: nextKey, productId: products[0]?.id ?? 0, boxes: 1, rateText: lastRate }]);
     setNextKey((k) => k + 1);
   };
   const removeRow = (key: number) =>
@@ -49,8 +51,18 @@ export function PurchaseForm({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const valid = rows.filter((r) => r.productId > 0 && r.boxes >= 1);
-    const itemsPayload = JSON.stringify(valid.map((r) => ({ productId: r.productId, boxes: r.boxes, ratePerBox: Number(r.rateText) || 0 })));
+    const filled = rows.filter((r) => r.productId > 0 && r.boxes >= 1);
+    if (!filled.length) {
+      toast.error("At least ek product add karein");
+      return;
+    }
+    // Rate blank ya 0 mat hone do — warna purchase ₹0 me save ho jayega (pehle yahi hua tha)
+    const badIdx = filled.findIndex((r) => !r.rateText.trim() || (Number(r.rateText) || 0) <= 0);
+    if (badIdx >= 0) {
+      toast.error(`Item ${rows.indexOf(filled[badIdx]) + 1}: rate (per box) 0 se zyada enter karein`);
+      return;
+    }
+    const itemsPayload = JSON.stringify(filled.map((r) => ({ productId: r.productId, boxes: r.boxes, ratePerBox: Number(r.rateText) || 0 })));
     fd.set("items", itemsPayload);
     fd.set("supplierId", String(supplierId));
     fd.set("direction", direction);

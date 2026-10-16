@@ -101,7 +101,7 @@ export const supplierSchema = z.object({
 export const purchaseItemSchema = z.object({
   productId: z.coerce.number().int().positive("Select a product for each row"),
   boxes: z.coerce.number().int().min(1, "At least 1 box").max(100000),
-  ratePerBox: z.coerce.number().min(0, "Rate cannot be negative").max(1000000),
+  ratePerBox: z.coerce.number().min(0.01, "Enter rate per box for each item").max(1000000),
 });
 
 /** Purchase create form ke liye. */
