@@ -346,7 +346,7 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
   const end = `${month}-31`;
   const range = and(gte(sales.saleDate, start), lte(sales.saleDate, end));
 
-  const [productSales, customerSales, staffDelivered, totals] = await Promise.all([
+  const [productSales, perSaleRows, staffDelivered, totals] = await Promise.all([
     db
       .select({
         name: products.name,
@@ -362,15 +362,14 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
       .orderBy(desc(sql`sum(${saleItems.boxes})`)),
     db
       .select({
-        name: sales.customerName,
+        customerName: sales.customerName,
+        totalAmount: sales.totalAmount,
         boxes: sql<string>`coalesce(sum(${saleItems.boxes}),0)`,
-        amount: sql<string>`coalesce(sum(${sales.totalAmount}),0)`,
       })
       .from(sales)
       .leftJoin(saleItems, eq(saleItems.saleId, sales.id))
       .where(range)
-      .groupBy(sales.customerName, sales.id)
-      .orderBy(desc(sql`sum(${sales.totalAmount})`)),
+      .groupBy(sales.id),
     db
       .select({
         name: staff.name,
@@ -390,16 +389,18 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
       .where(range),
   ]);
 
-  // Merge customer rows by normalized name (case-insensitive)
+  // Customer-wise: aggregate per sale FIRST, then merge by normalized name.
+  // Summing totalAmount directly over the sale_items join multiplied each
+  // sale's amount by its item count — that was the big report bug.
   const custMap = new Map<string, { name: string; boxes: number; amount: number }>();
-  for (const c of customerSales) {
-    const key = (c.name ?? "").trim().toLowerCase();
+  for (const s of perSaleRows) {
+    const key = (s.customerName ?? "").trim().toLowerCase();
     const ex = custMap.get(key);
     if (ex) {
-      ex.boxes += num(c.boxes);
-      ex.amount += num(c.amount);
+      ex.boxes += num(s.boxes);
+      ex.amount += num(s.totalAmount);
     } else {
-      custMap.set(key, { name: (c.name ?? "").trim(), boxes: num(c.boxes), amount: num(c.amount) });
+      custMap.set(key, { name: (s.customerName ?? "").trim(), boxes: num(s.boxes), amount: num(s.totalAmount) });
     }
   }
 
