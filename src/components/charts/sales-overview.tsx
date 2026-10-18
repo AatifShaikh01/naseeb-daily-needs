@@ -17,13 +17,13 @@ function ChartTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: Array<{ payload?: { date?: string; amount?: number } }>;
+  payload?: Array<{ payload?: { label?: string; date?: string; amount?: number } }>;
 }) {
   const point = payload?.[0]?.payload;
   if (!active || !point) return null;
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-card">
-      <p className="text-xs font-medium text-muted-foreground">{point.date}</p>
+      <p className="text-xs font-medium text-muted-foreground">{point.label ?? point.date}</p>
       <p className="text-sm font-bold" style={{ color: BRAND }}>{money(point.amount ?? 0)}</p>
     </div>
   );
@@ -70,7 +70,7 @@ export function SalesOverviewCard({
 
       {/* Total sales + change vs previous week */}
       <div className="mt-4 rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-900/50">
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total sales</p>
+        <p className="text-sm font-semibold text-foreground">Total sales</p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <span className="text-3xl font-extrabold tracking-tight sm:text-4xl">{money(total)}</span>
           {changePct !== null ? (
@@ -95,7 +95,7 @@ export function SalesOverviewCard({
               <Wallet className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-sm text-slate-500 dark:text-slate-400">Today</p>
+              <p className="text-sm font-semibold text-foreground">Today</p>
               <p className="truncate text-lg font-bold">{money(todayAmount)}</p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export function SalesOverviewCard({
               <ChartColumn className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-sm text-slate-500 dark:text-slate-400">Avg. sale</p>
+              <p className="text-sm font-semibold text-foreground">Avg. sale</p>
               <p className="truncate text-lg font-bold">{money(avg)}</p>
             </div>
           </div>

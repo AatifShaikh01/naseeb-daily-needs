@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { db, purchases, purchaseItems, supplierPayments, suppliers } from "@/db";
+import { db, purchases, purchaseItems, stockIn, supplierPayments, suppliers } from "@/db";
 import { todayIST } from "@/lib/dates";
 import { getSession } from "./auth";
 import { firstError, purchaseSchema, supplierPaymentSchema, supplierSchema } from "@/lib/validation";
@@ -46,7 +46,7 @@ function parseItems(raw: FormDataEntryValue | null): ParsedPItem[] {
   }
 }
 
-/** Purchase create — purchase + items (+ supplier payment agar paid/partial). */
+/** Purchase create — purchase + items + stock-in (+ supplier payment if paid/partial). */
 export async function createPurchaseAction(
   _prev: ActionResult | null,
   formData: FormData,
@@ -70,10 +70,17 @@ export async function createPurchaseAction(
   const sign = direction === "return" ? -1 : 1;
   const total = items.reduce((s, it) => s + it.boxes * it.ratePerBox, 0);
   const totalRounded = sign * (Math.round(total * 100) / 100);
+  /* Returns: totalAmount is already negative, so it adjusts the supplier
+   * balance directly. Keep paid at 0 — otherwise the return credit gets
+   * cancelled out and a phantom "payment" row is created. */
   const paid =
-    paymentStatus === "paid" ? totalRounded
-    : paymentStatus === "pending" ? 0
-    : Math.round(Math.min(Math.max(Number(paidAmount), 0), Math.abs(totalRounded)) * 100) / 100 * Math.sign(totalRounded || 1);
+    direction === "return"
+      ? 0
+      : paymentStatus === "paid"
+        ? totalRounded
+        : paymentStatus === "pending"
+          ? 0
+          : Math.round(Math.min(Math.max(Number(paidAmount), 0), Math.abs(totalRounded)) * 100) / 100 * Math.sign(totalRounded || 1);
 
   const [row] = await db
     .insert(purchases)
@@ -96,6 +103,22 @@ export async function createPurchaseAction(
     })),
   );
 
+  /* The purchased goods must also land in stock_in — otherwise the Daily
+   * Report, Stock page and sale-form stock limits never see them.
+   * direction "in" adds boxes, "return" removes them (negative boxes). */
+  const [supplierRow] = await db
+    .select({ name: suppliers.name })
+    .from(suppliers)
+    .where(eq(suppliers.id, supplierId));
+  await db.insert(stockIn).values(
+    items.map((it) => ({
+      entryDate,
+      productId: it.productId,
+      boxes: sign * it.boxes,
+      note: `Purchase #${row.id} · ${supplierRow?.name ?? "Supplier"}`,
+    })),
+  );
+
   if (paid !== 0) {
     await db.insert(supplierPayments).values({
       purchaseId: row.id,
@@ -103,12 +126,13 @@ export async function createPurchaseAction(
       amount: Math.abs(paid).toFixed(2),
       paidOn: entryDate,
       mode: "cash",
-      note: direction === "return" ? "Return adjustment" : paymentStatus === "paid" ? "Paid in full" : "Part payment",
+      note: paymentStatus === "paid" ? "Paid in full" : "Part payment",
     });
   }
 
   revalidatePath("/purchases");
   revalidatePath("/stock");
+  revalidatePath("/stock-in");
   return { ok: true };
 }
 
