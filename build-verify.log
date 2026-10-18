@@ -18,3 +18,29 @@
 ✓ Generating static pages using 3 workers (17/17) in 6.4s
   Finalizing page optimization ...
   Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /change-pin
+├ ○ /icon.svg
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /more
+├ ƒ /pending
+├ ƒ /products
+├ ƒ /purchases
+├ ƒ /reports
+├ ƒ /sale
+├ ƒ /sales
+├ ƒ /settings
+├ ƒ /stock
+└ ƒ /stock-in
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+__EXIT_CODE__=0  
