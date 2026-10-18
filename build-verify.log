@@ -1,0 +1,9 @@
+
+> naseeb-daily-needs@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.4.0 (webpack)
+- Environments: .env.local
+✓ Running next.config.ts took 116ms
+
+  Creating an optimized production build ...
