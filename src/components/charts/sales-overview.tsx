@@ -59,7 +59,7 @@ export function SalesOverviewCard({
     <div className="mt-6 rounded-3xl border border-border bg-card p-4 shadow-card sm:p-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 dark:bg-teal-950/50">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <TrendingUp className="h-6 w-6" />
         </div>
         <div>
@@ -69,7 +69,7 @@ export function SalesOverviewCard({
       </div>
 
       {/* Total sales + change vs previous week */}
-      <div className="mt-4 rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-900/50">
+      <div className="mt-4 rounded-2xl bg-muted/50 p-4">
         <p className="text-sm font-semibold text-foreground">Total sales</p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <span className="text-3xl font-extrabold tracking-tight sm:text-4xl">{money(total)}</span>
@@ -89,9 +89,9 @@ export function SalesOverviewCard({
 
       {/* Today + Avg. sale mini cards */}
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-teal-50/80 p-3 dark:bg-teal-950/30">
+        <div className="rounded-2xl bg-primary/5 p-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Wallet className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -100,9 +100,9 @@ export function SalesOverviewCard({
             </div>
           </div>
         </div>
-        <div className="rounded-2xl bg-emerald-50/80 p-3 dark:bg-emerald-950/30">
+        <div className="rounded-2xl bg-emerald-500/5 p-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
               <ChartColumn className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -113,8 +113,13 @@ export function SalesOverviewCard({
         </div>
       </div>
 
-      {/* Combo chart — light bars + line, today highlighted */}
-      <div className="mt-5 h-56 w-full sm:h-64">
+      {/* Combo chart — light bars + line, today highlighted.
+          On tap the recharts wrapper takes focus — hide its outline. */}
+      <style>{`.recharts-wrapper:focus, .recharts-wrapper:focus-visible { outline: none; }`}</style>
+      <div
+        className="mt-5 h-56 w-full outline-none sm:h-64"
+        style={{ WebkitTapHighlightColor: "transparent" }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 8, left: -6, bottom: 0 }} barCategoryGap="28%">
             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="hsl(var(--border))" />
