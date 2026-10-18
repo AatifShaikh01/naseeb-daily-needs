@@ -66,9 +66,9 @@ export async function createPurchaseAction(
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { entryDate, supplierId, direction, paymentStatus, paidAmount, note } = parsed.data;
+  const { entryDate, supplierId, direction, paymentStatus, paidAmount, note, items: parsedItems } = parsed.data;
   const sign = direction === "return" ? -1 : 1;
-  const total = items.reduce((s, it) => s + it.boxes * it.ratePerBox, 0);
+  const total = parsedItems.reduce((s, it) => s + it.boxes * it.ratePerBox, 0);
   const totalRounded = sign * (Math.round(total * 100) / 100);
   /* Returns: totalAmount is already negative, so it adjusts the supplier
    * balance directly. Keep paid at 0 — otherwise the return credit gets
@@ -95,7 +95,7 @@ export async function createPurchaseAction(
     .returning({ id: purchases.id });
 
   await db.insert(purchaseItems).values(
-    items.map((it) => ({
+    parsedItems.map((it) => ({
       purchaseId: row.id,
       productId: it.productId,
       boxes: sign * it.boxes,
@@ -111,7 +111,7 @@ export async function createPurchaseAction(
     .from(suppliers)
     .where(eq(suppliers.id, supplierId));
   await db.insert(stockIn).values(
-    items.map((it) => ({
+    parsedItems.map((it) => ({
       entryDate,
       productId: it.productId,
       boxes: sign * it.boxes,
@@ -167,6 +167,19 @@ export async function recordSupplierPaymentAction(
       sql`${purchases.supplierId} = ${supplierId} AND (${purchases.totalAmount} - ${purchases.paidAmount}) > 0`,
     )
     .orderBy(sql`${purchases.entryDate} asc, ${purchases.id} asc`);
+
+  /* Reject overpayment up-front — the FIFO loop below would otherwise
+   * silently drop the excess money (recorded amount < actually paid). */
+  const totalPending =
+    Math.round(
+      pendingRows.reduce(
+        (s, p) => s + Math.max(0, Math.round((Number(p.total) - Number(p.paid)) * 100) / 100),
+        0,
+      ) * 100,
+    ) / 100;
+  if (amount > totalPending + 0.004) {
+    return { error: `Amount exceeds total pending dues of ₹${totalPending.toLocaleString("en-IN")}` };
+  }
 
   for (const p of pendingRows) {
     if (left <= 0) break;

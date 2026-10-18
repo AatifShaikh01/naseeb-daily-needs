@@ -139,18 +139,26 @@ export function PurchaseForm({
       <div className="rounded-xl bg-muted/40 p-4">
         <div className="flex justify-between text-base"><span className="font-medium">Total</span><span className="font-bold">₹{total.toFixed(2)}</span></div>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        {(["paid", "pending", "partial"] as const).map((s) => (
-          <button key={s} type="button" onClick={() => setStatus(s)}
-            className={`rounded-xl border py-2.5 text-sm font-medium capitalize ${status === s ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>
-            {s}
-          </button>
-        ))}
-      </div>
-      {status === "partial" ? (
-        <input type="number" min={0} step="0.01" className={inputCls} value={paidInput}
-          onChange={(e) => setPaidInput(e.target.value)} placeholder="Amount paid" />
-      ) : null}
+      {direction === "return" ? (
+        <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          Return value adjusts the supplier balance directly — payment status does not apply.
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            {(["paid", "pending", "partial"] as const).map((s) => (
+              <button key={s} type="button" onClick={() => setStatus(s)}
+                className={`rounded-xl border py-2.5 text-sm font-medium capitalize ${status === s ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+          {status === "partial" ? (
+            <input type="number" min={0} step="0.01" className={inputCls} value={paidInput}
+              onChange={(e) => setPaidInput(e.target.value)} placeholder="Amount paid" />
+          ) : null}
+        </>
+      )}
       <div className="space-y-1.5">
         <label className="text-sm font-medium">Note</label>
         <input name="note" type="text" className={inputCls} placeholder="optional" />
