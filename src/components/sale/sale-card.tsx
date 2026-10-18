@@ -124,15 +124,19 @@ export function SaleCard({
             {formatDate(sale.saleDate)}
             {sale.customerPhone ? ` · ${sale.customerPhone}` : ""} · by {staffName}
           </p>
-          <p className="mt-1 truncate text-sm text-muted-foreground">{itemsSummary || "—"}</p>
+          <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">{itemsSummary || "—"}</p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="font-bold">{money(sale.totalAmount)}</p>
-          <p className="text-xs text-muted-foreground">{totalBoxes} boxes</p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <div className="text-right">
+            <p className="font-bold">{money(sale.totalAmount)}</p>
+            <p className="text-xs text-muted-foreground">
+              {totalBoxes} box{totalBoxes === 1 ? "" : "es"}
+            </p>
+          </div>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
         </div>
-        <ChevronDown
-          className={`mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
-        />
       </button>
 
       {/* Expanded detail */}
