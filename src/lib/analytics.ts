@@ -187,6 +187,18 @@ export async function getLast7DaysSales(today = todayIST()): Promise<DailySalesP
   return points;
 }
 
+/** Total sales for the previous 7-day window (day -13 through day -7) —
+ *  used to show the % change vs the current period. */
+export async function getPrevious7DaysSales(today = todayIST()): Promise<number> {
+  const start = addDays(today, -13);
+  const end = addDays(today, -7);
+  const rows = await db
+    .select({ total: sql<string>`coalesce(sum(${sales.totalAmount}),0)` })
+    .from(sales)
+    .where(and(gte(sales.saleDate, start), lte(sales.saleDate, end)));
+  return num(rows[0]?.total);
+}
+
 /* ---------------- Staff delivery (Delivered By) ---------------- */
 export type StaffDelivery = { staffId: number; name: string; todayBoxes: number; monthBoxes: number };
 

@@ -4,8 +4,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SalesBarChart } from "@/components/charts/sales-bar-chart";
-import { getTodaySummary, getTodayActivity, getProductStock, getLast7DaysSales, getStaffDelivery, getTopPendingCustomers } from "@/lib/analytics";
+import { SalesOverviewCard } from "@/components/charts/sales-overview";
+import { getTodaySummary, getTodayActivity, getProductStock, getLast7DaysSales, getPrevious7DaysSales, getStaffDelivery, getTopPendingCustomers } from "@/lib/analytics";
 import { todayIST, formatDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/page-header";
 
@@ -47,6 +47,7 @@ async function DashboardContent() {
   const activity = await getTodayActivity(today);
   const productStock = await getProductStock();
   const salesData = await getLast7DaysSales(today);
+  const prev7Total = await getPrevious7DaysSales(today);
   const staffDelivery = await getStaffDelivery(today);
   const topPending = await getTopPendingCustomers(5);
 
@@ -151,22 +152,8 @@ async function DashboardContent() {
           )}
         </CardContent>
       </Card>
-      {/* Chart section */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Last 7 Days Sales</CardTitle>
-          <CardDescription>Today sales trend (₹).</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-3 flex flex-wrap gap-3 text-sm">
-            <div className="text-muted-foreground">Today</div>
-            <div className="font-bold">₹{salesData[salesData.length - 1]?.amount.toLocaleString("en-IN") ?? "0"}</div>
-            <div className="border-l border-border/60 ml-2 pl-2 text-muted-foreground">7-day total</div>
-            <div className="font-bold">₹{salesData.reduce((sum, d) => sum + d.amount, 0).toLocaleString("en-IN")}</div>
-          </div>
-          <SalesBarChart data={salesData} />
-        </CardContent>
-      </Card>
+      {/* Chart section — Sales Overview */}
+      <SalesOverviewCard data={salesData} previousTotal={prev7Total} />
 
       {/* Delivered by section */}
       <Card className="mt-6">
