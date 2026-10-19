@@ -1,5 +1,5 @@
 ﻿import { getBillData } from "./data";
-import { PrintButton } from "./print-button";
+import { PrintButton, ShareBillButton } from "./print-button";
 import { formatDate } from "@/lib/dates";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -284,6 +284,8 @@ export default async function BillPage({
         </p>
 
       </div>
+
+      <ShareBillButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items }} />
 
 
 

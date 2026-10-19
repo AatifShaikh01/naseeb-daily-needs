@@ -1,7 +1,7 @@
 ﻿﻿"use client";
 
 import { useState } from "react";
-import { Printer, ArrowLeft, Download } from "lucide-react";
+import { Printer, ArrowLeft, Download, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -16,15 +16,9 @@ type BillPageProps = {
   items: { productName: string; productSize: string; boxes: number; ratePerBox: number; amount: number }[];
 };
 
-export function PrintButton({ bill }: { bill: BillPageProps }) {
-  const [busy, setBusy] = useState(false);
+async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
   const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
-  const money = (v: number) => `₹${v.toLocaleString("en-IN")}`;
   const billNo = `SALE-${String(bill.id).padStart(4, "0")}`;
-
-  const downloadPDF = async () => {
-    try {
-      setBusy(true);
       const { jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
 
@@ -164,7 +158,29 @@ export function PrintButton({ bill }: { bill: BillPageProps }) {
       const foot = "Naseeb Daily Needs & Agencies · shaikh shahbaz : 9049642155 · tipu sultan chawk momin pura deulghat";
       doc.text(doc.splitTextToSize(foot, C - M), pageW / 2, y + 14, { align: "center" });
 
-      doc.save(`sale-${String(bill.id).padStart(4, "0")}-bill.pdf`);
+      return doc.output("blob");
+}
+
+function saveBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function PrintButton({ bill }: { bill: BillPageProps }) {
+  const [busy, setBusy] = useState(false);
+
+
+  const pdfFileName = `sale-${String(bill.id).padStart(4, "0")}-bill.pdf`;
+
+
+  const downloadPDF = async () => {
+    try {
+      setBusy(true);
+      saveBlob(await buildPdfBlob(bill), pdfFileName);
     } finally {
       setBusy(false);
     }
@@ -193,4 +209,50 @@ export function PrintButton({ bill }: { bill: BillPageProps }) {
   );
 }
 
+export function ShareBillButton({ bill }: { bill: BillPageProps }) {
+  const [busy, setBusy] = useState(false);
+  const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
+  const money = (v: number) => `₹${v.toLocaleString("en-IN")}`;
+  const billNo = `SALE-${String(bill.id).padStart(4, "0")}`;
+  const pdfFileName = `sale-${String(bill.id).padStart(4, "0")}-bill.pdf`;
 
+  const shareOnWhatsApp = async () => {
+    try {
+      setBusy(true);
+      const blob = await buildPdfBlob(bill);
+      const file = new File([blob], pdfFileName, { type: "application/pdf" });
+      // Mobile: system share sheet - WhatsApp select karo, PDF attached jayegi
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Bill ${billNo} - Naseeb Daily Needs`,
+          text: `Bill ${billNo} - ${bill.customerName} - Total ${money(bill.totalAmount)}`,
+        });
+        return;
+      }
+      // Desktop / purana browser: pehle download karo, phir wa.me khol do
+      saveBlob(blob, pdfFileName);
+      const phone = (bill.customerPhone || "").replace(/\D/g, "");
+      const msg = encodeURIComponent(
+        `Bill ${billNo} - Naseeb Daily Needs & Agencies\nCustomer: ${bill.customerName}\nTotal: ${money(pending)} pending (Total ${money(bill.totalAmount)}, Paid ${money(bill.paidAmount)})\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
+      );
+      window.open(`https://wa.me/${phone ? `91${phone.slice(-10)}` : ""}?text=${msg}`, "_blank");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="no-print mt-6 flex justify-center">
+      <Button
+        size="lg"
+        onClick={shareOnWhatsApp}
+        disabled={busy}
+        className="w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1DA851]"
+      >
+        {busy ? "Preparing..." : <MessageCircle className="mr-2 h-5 w-5" />}
+        Share Bill on WhatsApp
+      </Button>
+    </div>
+  );
+}
