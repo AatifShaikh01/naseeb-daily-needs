@@ -2,6 +2,7 @@ import { LogOut, User } from "lucide-react";
 
 import { getSession, logoutAction } from "@/lib/actions/auth";
 import { APP_NAME } from "@/lib/navigation";
+import { Logo } from "@/components/layout/logo";
 
 /**
  * Top header — brand + logged-in user + logout.
@@ -14,10 +15,7 @@ export async function Header() {
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 shadow-soft backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="flex min-h-20 items-center justify-between gap-3 px-4 py-3 md:px-6">
         <div className="flex min-w-0 items-center gap-3.5">
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl font-extrabold text-primary-foreground shadow-soft">
-            N
-            <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-[3px] border-card bg-accent" />
-          </div>
+          <Logo height={44} className="shrink-0" />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-lg font-extrabold tracking-wide text-foreground sm:text-xl">
               NASEEB

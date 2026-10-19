@@ -11,6 +11,9 @@ import { cn } from "@/lib/utils";
  */
 export function BottomNav() {
   const pathname = usePathname();
+  // Bill page par bottom nav nahi dikhna chahiye — full page bill view
+  if (pathname.startsWith("/bill/")) return null;
+
   const left = NAV_ITEMS.slice(0, 2);
   const center = NAV_ITEMS[2];
   const right = NAV_ITEMS.slice(3);

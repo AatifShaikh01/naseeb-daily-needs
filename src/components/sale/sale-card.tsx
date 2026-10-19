@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Receipt, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteSaleAction } from "@/lib/actions/sales";
@@ -192,6 +192,9 @@ export function SaleCard({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
+            <a href={`/bill/${sale.id}`} className="rounded-xl border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5">
+              <Receipt className="mr-1 h-3 w-3" /> Generate Bill
+            </a>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               <Pencil /> Edit
             </Button>

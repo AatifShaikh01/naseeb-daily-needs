@@ -71,11 +71,28 @@
   --shadow-float: 0 8px 24px -6px rgb(15 23 42 / 0.12);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  -webkit-tap-highlight-color: transparent;
+/* Print / PDF styles — hide PrintButton (no-print), reset layout for clean output */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .max-w-[700px] {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .bg-white {
+    background: #fff !important;
+  }
+  table {
+    page-break-inside: avoid;
+  }
 }
 
 /* NumberStepper ke andar browser ke native up/down arrows hatao —

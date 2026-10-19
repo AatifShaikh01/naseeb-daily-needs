@@ -27,6 +27,25 @@ type PRow = { name: string; size: string; boxes: number; amount: number };
 type CRow = { name: string; boxes: number; amount: number };
 type SRow = { name: string; boxes: number };
 
+/** Shop identity printed on every bill / report header. */
+const SHOP = {
+  name: "Naseeb Daily Needs & Agencies",
+  contact: "shaikh shahbaz : 9049642155",
+  address: "tipu sultan chawk momin pura deulghat",
+} as const;
+
+/** Load a public image as a base64 data URL for jsPDF addImage. */
+async function loadLogoDataUrl(path: string): Promise<string> {
+  const res = await fetch(path);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 /** Monthly report ka formatted PDF — DIRECT download, koi print dialog nahi.
  *  Text bada rakha hai (12-22pt) taaki phone/print dono me saaf dikhe. */
 export function MonthlyPdfExport({
@@ -55,21 +74,26 @@ export function MonthlyPdfExport({
       const green: [number, number, number] = [15, 118, 110];
       const inr = (n: number) => `Rs.${n.toLocaleString("en-IN")}`;
 
-      // Header
+      // Logo + header
+      const logoData = await loadLogoDataUrl("/image.png");
+      doc.addImage(logoData, "PNG", 40, 25, 45, 45);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
+      doc.setFontSize(20);
       doc.setTextColor(green[0], green[1], green[2]);
-      doc.text("Naseeb Daily Needs & Agencies", 40, 52);
+      doc.text(SHOP.name, 100, 48);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setTextColor(90, 90, 90);
-      doc.text(`Monthly Sales Report - ${monthLabel}`, 40, 74);
+      doc.text(SHOP.contact, 100, 64);
+      doc.text(SHOP.address, 100, 76);
+      doc.setFontSize(14);
+      doc.text(`Monthly Sales Report - ${monthLabel}`, 100, 92);
       doc.setDrawColor(green[0], green[1], green[2]);
       doc.setLineWidth(2.5);
-      doc.line(40, 84, pageW - 40, 84);
+      doc.line(40, 108, pageW - 40, 108);
 
       // Summary cards
-      let y = 102;
+      let y = 126;
       const cardW = (pageW - 80 - 20) / 3;
       const cards: [string, string][] = [
         ["Total Sales", inr(totals.totalSalesAmount)],
@@ -210,21 +234,26 @@ export function DailyPdfExport({
             })
           : date;
 
-      // Header
+      // Logo + header
+      const logoData = await loadLogoDataUrl("/image.png");
+      doc.addImage(logoData, "PNG", 40, 25, 45, 45);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
+      doc.setFontSize(20);
       doc.setTextColor(green[0], green[1], green[2]);
-      doc.text("Naseeb Daily Needs & Agencies", 40, 52);
+      doc.text(SHOP.name, 100, 48);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setTextColor(90, 90, 90);
-      doc.text(`Daily Report - ${dateLabel}`, 40, 74);
+      doc.text(SHOP.contact, 100, 64);
+      doc.text(SHOP.address, 100, 76);
+      doc.setFontSize(14);
+      doc.text(`Daily Report - ${dateLabel}`, 100, 92);
       doc.setDrawColor(green[0], green[1], green[2]);
       doc.setLineWidth(2.5);
-      doc.line(40, 84, pageW - 40, 84);
+      doc.line(40, 108, pageW - 40, 108);
 
       // Summary cards — 2 rows x 3
-      let y = 102;
+      let y = 126;
       const cardW = (pageW - 80 - 20) / 3;
       const cardRows: [string, string][][] = [
         [
