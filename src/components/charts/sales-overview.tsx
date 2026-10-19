@@ -9,7 +9,7 @@ import type { DailySalesPoint } from "@/lib/analytics";
 const BRAND = "#0f766e";
 const BRAND_LIGHT = "#c3dddb";
 
-const money = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+const money = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
 /** Hover/tap par us din ki sale dikhata hai. */
 function ChartTooltip({

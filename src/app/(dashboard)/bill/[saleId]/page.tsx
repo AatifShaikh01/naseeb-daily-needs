@@ -37,7 +37,7 @@ export default async function BillPage({
 
   return (
 
-    <div className="max-w-[700px] mx-auto p-6 sm:p-10 bg-white">
+    <div data-bill-sheet className="max-w-[700px] mx-auto p-6 sm:p-10 bg-white">
 
       <PrintButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items }} />
 

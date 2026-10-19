@@ -200,10 +200,15 @@ function SaleFormFields({
     setShowSug(false);
   };
 
+  const listRef = useRef<HTMLDivElement | null>(null);
   const addRow = () => {
     const pid = products[0]?.id ?? 0;
     setRows((r) => [...r, { key: nextKey, productId: pid, boxes: 1, rateText: defaultRate(pid), rateTouched: false }]);
     setNextKey((k) => k + 1);
+    // Naya item add hote hi list ke aakhir tak scroll
+    requestAnimationFrame(() => {
+      listRef.current?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
   };
   const removeRow = (key: number) => setRows((r) => (r.length > 1 ? r.filter((x) => x.key !== key) : r));
   const updateRow = (key: number, patch: Partial<ItemRow>) =>
@@ -313,14 +318,9 @@ function SaleFormFields({
 
       {/* Items */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Items ({rows.length})</p>
-          <Button type="button" variant="outline" size="sm" onClick={addRow}>
-            <Plus /> Add item
-          </Button>
-        </div>
-
-        {rows.map((row, i) => (
+        <p className="text-sm font-medium">Items ({rows.length})</p>
+        <div ref={listRef} className="space-y-3">
+          {rows.map((row, i) => (
           <div key={row.key} className="rounded-xl border border-border bg-card p-3 space-y-3">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Product</label>
@@ -383,8 +383,14 @@ function SaleFormFields({
               </p>
             ) : null}
           </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      {/* Naya item - list ke neeche */}
+      <Button type="button" variant="outline" className="w-full" size="lg" onClick={addRow}>
+        <Plus /> Add item
+      </Button>
 
       {/* Summary */}
       <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-1">

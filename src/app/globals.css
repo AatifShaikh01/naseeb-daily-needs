@@ -81,7 +81,7 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .max-w-[700px] {
+  [data-bill-sheet] {
     max-width: none !important;
     width: 100% !important;
     margin: 0 !important;
