@@ -1,0 +1,31 @@
+(node:7604) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+=== purchases ===
+  P#11 date=Fri Oct 16 2026 00:00:00 GMT+0530 (India Standard Time) sup=8 dir=in total=77800.00 paid=0.00 note=""
+  P#12 date=Sat Oct 10 2026 00:00:00 GMT+0530 (India Standard Time) sup=7 dir=in total=54250.00 paid=54250.00 note=""
+  P#13 date=Sat Oct 17 2026 00:00:00 GMT+0530 (India Standard Time) sup=8 dir=in total=19400.00 paid=0.00 note=""
+=== purchase_items ===
+  P#11 Jeera (150 ml) boxes=30 rate=210.00
+  P#11 Lemon (200 ml) boxes=50 rate=230.00
+  P#11 Orange (200 ml) boxes=60 rate=230.00
+  P#11 Power Up (200 ml) boxes=30 rate=230.00
+  P#11 Cola (200 ml) boxes=30 rate=230.00
+  P#11 Sting (150 ml) boxes=30 rate=220.00
+  P#11 Lemon (500 ml) boxes=20 rate=370.00
+  P#11 Orange (500 ml) boxes=20 rate=370.00
+  P#11 Gluco Energy (150 ml) boxes=20 rate=220.00
+  P#11 Nimbu Pani (150 ml) boxes=30 rate=220.00
+  P#13 Can (185) boxes=20 rate=600.00
+  P#13 Cala (500 ml) boxes=10 rate=370.00
+  P#13 Power Up (500 ml) boxes=10 rate=370.00
+=== suppliers ===
+  S#7 Jitesh (Saya Aqua)
+  S#8 Campa Colddrinks
+ERR column "unit_price" does not exist
