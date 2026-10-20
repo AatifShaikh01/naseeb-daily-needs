@@ -1,8 +1,11 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-import { getDailyReport, getMonthlyReport } from "@/lib/analytics";
+import { getDailyReport, getMonthlyProfit, getMonthlyReport } from "@/lib/analytics";
 import { todayIST } from "@/lib/dates";
 import { ReportCsvExport, MonthlyPdfExport, DailyPdfExport } from "@/components/reports/report-export";
+import { ProfitCard } from "@/components/reports/profit-card";
+
+import type { MonthlyProfit } from "@/lib/analytics";
 
 export default async function ReportsPage({
   searchParams,
@@ -19,6 +22,7 @@ export default async function ReportsPage({
 
   const month = params.month ?? defaultMonth;
   const monthly = await getMonthlyReport(month);
+  const profit = await getMonthlyProfit(month);
 
   const dailyCsvRows: (string | number | null)[][] = [
     ["Date", daily.date],
@@ -288,7 +292,7 @@ export default async function ReportsPage({
                   </table>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="no-print mt-4 flex flex-wrap gap-2">
                   <ReportCsvExport filename={monthlyFileName} rows={monthlyCsvRows} />
                   <MonthlyPdfExport
                     monthLabel={monthLabel}
@@ -304,6 +308,7 @@ export default async function ReportsPage({
                 </div>
               </CardContent>
             </Card>
+            <ProfitCard month={month} monthLabel={monthLabel} profit={profit} />
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 
-import { db, payments, products, saleItems, sales, staff, stockIn } from "@/db";
+import { db, payments, products, purchaseItems, purchases, saleItems, sales, staff, stockIn } from "@/db";
 import { addDays, todayIST } from "@/lib/dates";
 import { lowStockThreshold } from "@/lib/config";
 
@@ -327,6 +327,125 @@ export async function getDailyReport(date: string): Promise<DailyReport> {
     salesCount: num(saleRows[0]?.count),
     paymentsReceived: num(payRows[0]?.total),
     pendingAtDate: num(pendRows[0]?.total),
+  };
+}
+
+/* ---------------- Monthly profit ----------------
+ * Har product: kitne me aaya (purchase avg rate) vs kitne me bika (sale avg
+ * rate) — sirf beche gaye boxes par profit.
+ * Cost basis: us MAHINE ki khareed ka weighted avg; agar us mahine khareed
+ * nahi hui to pichli sabse recent khareed ka rate (fallback). */
+
+export type ProfitRow = {
+  name: string;
+  size: string;
+  buyRate: number | null; // avg khareed rate (null = no purchase history)
+  buyBoxes: number; // us mahine khareede gaye boxes
+  sellRate: number;
+  sellBoxes: number;
+  revenue: number;
+  cost: number; // sellBoxes * buyRate
+  profit: number; // revenue - cost
+};
+
+export type MonthlyProfit = {
+  month: string;
+  rows: ProfitRow[];
+  totalRevenue: number;
+  totalCost: number;
+  totalProfit: number;
+};
+
+export async function getMonthlyProfit(month: string): Promise<MonthlyProfit> {
+  const start = `${month}-01`;
+  const end = `${month}-31`;
+  const saleRange = and(gte(sales.saleDate, start), lte(sales.saleDate, end));
+  const purchRange = and(gte(purchases.entryDate, start), lte(purchases.entryDate, end));
+
+  const [soldRows, monthBuyRows, historyRows] = await Promise.all([
+    // Us mahine ki bikri — product-wise
+    db
+      .select({
+        productId: products.id,
+        name: products.name,
+        size: products.size,
+        boxes: sql<string>`coalesce(sum(${saleItems.boxes}),0)`,
+        revenue: sql<string>`coalesce(sum(${saleItems.boxes} * ${saleItems.ratePerBox}),0)`,
+      })
+      .from(saleItems)
+      .innerJoin(sales, eq(saleItems.saleId, sales.id))
+      .innerJoin(products, eq(saleItems.productId, products.id))
+      .where(saleRange)
+      .groupBy(products.id, products.name, products.size),
+    // Us mahine ki khareed — product-wise
+    db
+      .select({
+        productId: products.id,
+        boxes: sql<string>`coalesce(sum(${purchaseItems.boxes}),0)`,
+        cost: sql<string>`coalesce(sum(${purchaseItems.boxes} * ${purchaseItems.ratePerBox}),0)`,
+      })
+      .from(purchaseItems)
+      .innerJoin(purchases, eq(purchaseItems.purchaseId, purchases.id))
+      .where(and(purchRange, eq(purchases.direction, "in")))
+      .groupBy(products.id),
+    // Har product ki pichli khareed (fallback rate) — latest purchase first
+    db
+      .select({
+        productId: purchaseItems.productId,
+        rate: purchaseItems.ratePerBox,
+        entryDate: purchases.entryDate,
+      })
+      .from(purchaseItems)
+      .innerJoin(purchases, eq(purchaseItems.purchaseId, purchases.id))
+      .where(eq(purchases.direction, "in"))
+      .orderBy(desc(purchases.entryDate), desc(purchases.id)),
+  ]);
+
+  const monthBuy = new Map<number, { boxes: number; cost: number }>();
+  for (const r of monthBuyRows) monthBuy.set(r.productId, { boxes: num(r.boxes), cost: num(r.cost) });
+
+  // Latest purchase rate per product (fallback)
+  const latestRate = new Map<number, number>();
+  for (const r of historyRows) {
+    if (!latestRate.has(r.productId)) latestRate.set(r.productId, num(r.rate));
+  }
+
+  const rows: ProfitRow[] = soldRows.map((s) => {
+    const sellBoxes = num(s.boxes);
+    const revenue = num(s.revenue);
+    const sellRate = sellBoxes > 0 ? revenue / sellBoxes : 0;
+    const mb = monthBuy.get(s.productId);
+    let buyRate: number | null = null;
+    let buyBoxes = 0;
+    if (mb && mb.boxes > 0) {
+      buyBoxes = mb.boxes;
+      buyRate = mb.cost / mb.boxes;
+    } else if (latestRate.has(s.productId)) {
+      buyRate = latestRate.get(s.productId)!;
+    }
+    const cost = buyRate != null ? sellBoxes * buyRate : 0;
+    return {
+      name: s.name,
+      size: s.size,
+      buyRate: buyRate != null ? Math.round(buyRate * 100) / 100 : null,
+      buyBoxes,
+      sellRate: Math.round(sellRate * 100) / 100,
+      sellBoxes,
+      revenue: Math.round(revenue * 100) / 100,
+      cost: Math.round(cost * 100) / 100,
+      profit: Math.round((revenue - cost) * 100) / 100,
+    };
+  });
+  rows.sort((a, b) => b.profit - a.profit);
+
+  const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0);
+  const totalCost = rows.reduce((s, r) => s + r.cost, 0);
+  return {
+    month,
+    rows,
+    totalRevenue: Math.round(totalRevenue * 100) / 100,
+    totalCost: Math.round(totalCost * 100) / 100,
+    totalProfit: Math.round((totalRevenue - totalCost) * 100) / 100,
   };
 }
 
