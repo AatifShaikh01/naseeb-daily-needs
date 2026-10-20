@@ -1,6 +1,7 @@
 "use client";
 
 import { ReportCsvExport } from "@/components/reports/report-export";
+import { ProfitPdfDownload, ProfitPdfShare } from "@/components/reports/profit-pdf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MonthlyProfit } from "@/lib/analytics";
 
@@ -68,7 +69,19 @@ export function ProfitCard({ month, monthLabel, profit }: { month: string; month
         {profit.rows.some((r) => r.buyRate == null) ? (
           <p className="mt-2 text-xs text-muted-foreground">— = is product ki khareed entry nahi mili.</p>
         ) : null}
-        <div className="no-print mt-4">
+        <div className="no-print mt-4 flex flex-wrap gap-2">
+          <ProfitPdfDownload
+            month={month}
+            monthLabel={monthLabel}
+            totals={{ revenue: profit.totalRevenue, cost: profit.totalCost, profit: profit.totalProfit }}
+            rows={profit.rows}
+          />
+          <ProfitPdfShare
+            month={month}
+            monthLabel={monthLabel}
+            totals={{ revenue: profit.totalRevenue, cost: profit.totalCost, profit: profit.totalProfit }}
+            rows={profit.rows}
+          />
           <ReportCsvExport
             filename={`naseeb-profit-${month}.csv`}
             rows={[
