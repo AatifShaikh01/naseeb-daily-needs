@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -129,6 +129,131 @@ export async function createPurchaseAction(
       note: paymentStatus === "paid" ? "Paid in full" : "Part payment",
     });
   }
+
+  revalidatePath("/purchases");
+  revalidatePath("/stock");
+  revalidatePath("/stock-in");
+  return { ok: true };
+}
+
+/** Purchase edit — purchase fields update + items replace + stock-in sync. */
+export async function updatePurchaseAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const id = Number(formData.get("id") ?? 0);
+  if (!id) return { error: "Purchase not found." };
+
+  const items = parseItems(formData.get("items"));
+  const parsed = purchaseSchema.safeParse({
+    entryDate: formData.get("entryDate") ?? todayIST(),
+    supplierId: formData.get("supplierId"),
+    direction: formData.get("direction") ?? "in",
+    paymentStatus: formData.get("paymentStatus") ?? "pending",
+    paidAmount: formData.get("paidAmount") ?? 0,
+    note: String(formData.get("note") ?? "").trim() || null,
+    items,
+  });
+  if (!parsed.success) return { error: firstError(parsed.error) };
+
+  const { entryDate, supplierId, direction, paymentStatus, paidAmount, note, items: parsedItems } = parsed.data;
+  const sign = direction === "return" ? -1 : 1;
+  const total = parsedItems.reduce((s, it) => s + it.boxes * it.ratePerBox, 0);
+  const totalRounded = sign * (Math.round(total * 100) / 100);
+  const paid =
+    direction === "return"
+      ? 0
+      : paymentStatus === "paid"
+        ? totalRounded
+        : paymentStatus === "pending"
+          ? 0
+          : Math.round(Math.min(Math.max(Number(paidAmount), 0), Math.abs(totalRounded)) * 100) / 100 * Math.sign(totalRounded || 1);
+
+  await db
+    .update(purchases)
+    .set({
+      entryDate,
+      supplierId,
+      direction,
+      totalAmount: totalRounded.toFixed(2),
+      paidAmount: paid.toFixed(2),
+      note: note ?? "",
+    })
+    .where(eq(purchases.id, id));
+
+  // Replace items
+  await db.delete(purchaseItems).where(eq(purchaseItems.purchaseId, id));
+  await db.insert(purchaseItems).values(
+    parsedItems.map((it) => ({
+      purchaseId: id,
+      productId: it.productId,
+      boxes: sign * it.boxes,
+      ratePerBox: it.ratePerBox.toFixed(2),
+    })),
+  );
+
+  // Sync stock_in — remove old entries for this purchase, re-insert new ones
+  const [supplierRow] = await db
+    .select({ name: suppliers.name })
+    .from(suppliers)
+    .where(eq(suppliers.id, supplierId));
+  await db.delete(stockIn).where(
+    sql`${stockIn.note} LIKE ${`Purchase #${id} · %`}`,
+  );
+  await db.insert(stockIn).values(
+    parsedItems.map((it) => ({
+      entryDate,
+      productId: it.productId,
+      boxes: sign * it.boxes,
+      note: `Purchase #${id} · ${supplierRow?.name ?? "Supplier"}`,
+    })),
+  );
+
+  // Payments sync — mirror sale edit logic
+  const autoNotes = ["Paid in full", "Part payment"];
+  const existing = await db
+    .select({ amount: supplierPayments.amount, note: supplierPayments.note })
+    .from(supplierPayments)
+    .where(eq(supplierPayments.purchaseId, id));
+  const manualSum = existing
+    .filter((p) => !autoNotes.includes(p.note))
+    .reduce((s, p) => s + Number(p.amount), 0);
+  await db
+    .delete(supplierPayments)
+    .where(and(eq(supplierPayments.purchaseId, id), inArray(supplierPayments.note, autoNotes)));
+  const autoAmount = Math.max(0, Math.round((paid - manualSum) * 100) / 100);
+  if (autoAmount > 0) {
+    await db.insert(supplierPayments).values({
+      purchaseId: id,
+      supplierId,
+      amount: autoAmount.toFixed(2),
+      paidOn: entryDate,
+      mode: "cash",
+      note: paymentStatus === "paid" ? "Paid in full" : "Part payment",
+    });
+  }
+
+  revalidatePath("/purchases");
+  revalidatePath("/stock");
+  revalidatePath("/stock-in");
+  return { ok: true };
+}
+
+/** Purchase delete — items, stock-in, payments, then the purchase itself. */
+export async function deletePurchaseAction(formData: FormData): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const id = Number(formData.get("id") ?? 0);
+  if (!id) return { error: "Purchase not found." };
+
+  await db.delete(purchaseItems).where(eq(purchaseItems.purchaseId, id));
+  await db.delete(stockIn).where(sql`${stockIn.note} LIKE ${`Purchase #${id} · %`}`);
+  await db.delete(supplierPayments).where(eq(supplierPayments.purchaseId, id));
+  await db.delete(purchases).where(eq(purchases.id, id));
 
   revalidatePath("/purchases");
   revalidatePath("/stock");
