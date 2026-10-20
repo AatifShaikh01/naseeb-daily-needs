@@ -380,14 +380,14 @@ export async function getMonthlyProfit(month: string): Promise<MonthlyProfit> {
     // Us mahine ki khareed — product-wise
     db
       .select({
-        productId: products.id,
+        productId: purchaseItems.productId,
         boxes: sql<string>`coalesce(sum(${purchaseItems.boxes}),0)`,
         cost: sql<string>`coalesce(sum(${purchaseItems.boxes} * ${purchaseItems.ratePerBox}),0)`,
       })
       .from(purchaseItems)
       .innerJoin(purchases, eq(purchaseItems.purchaseId, purchases.id))
       .where(and(purchRange, eq(purchases.direction, "in")))
-      .groupBy(products.id),
+      .groupBy(purchaseItems.productId),
     // Har product ki pichli khareed (fallback rate) — latest purchase first
     db
       .select({
