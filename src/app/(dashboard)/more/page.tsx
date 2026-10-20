@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/auth";
 import { ComingSoonCard, PageHeader } from "@/components/layout/page-header";
+import { PwaInstallButton } from "@/components/pwa/pwa-install-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "More" };
@@ -74,6 +75,21 @@ export default async function MorePage() {
           </Link>
         ))}
       </div>
+
+      <Card className="mb-6">
+        <CardHeader className="flex-row items-center gap-3 pb-2">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <MoreHorizontal className="h-5 w-5" />
+          </div>
+          <CardTitle>Install App</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Home screen par app icon lagao — fast open, full-screen, offline support.
+          </p>
+          <PwaInstallButton />
+        </CardContent>
+      </Card>
 
       <form action={logoutAction} className="mb-6">
         <button
