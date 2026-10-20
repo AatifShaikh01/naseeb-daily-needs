@@ -101,7 +101,32 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                                 <span className="font-semibold">{fmtDate(p.entryDate)}</span>
                                 <span className={rb(p.direction)}>{p.direction === "in" ? "Stock In" : "Return"}</span>
                               </div>
-                              {its.length ? <ul className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">{its.map((it, i) => <li key={i}>{it.productName} ({it.size}) × {Math.abs(it.boxes)} @ {inr(Math.abs(Number(it.ratePerBox)))}/box = <span className="text-foreground">{inr(Math.abs(it.boxes * Number(it.ratePerBox)))}</span></li>)}</ul> : null}
+                              {its.length ? (
+                                <div className="mt-1.5 overflow-x-auto rounded-lg border border-border/60">
+                                  <table className="w-full min-w-[430px] text-xs">
+                                    <thead>
+                                      <tr className="bg-muted/60 text-left text-muted-foreground">
+                                        <th className="px-2 py-1 font-semibold">Sr</th>
+                                        <th className="px-2 py-1 font-semibold">Item</th>
+                                        <th className="px-2 py-1 text-right font-semibold">Rate</th>
+                                        <th className="px-2 py-1 text-right font-semibold">Qty</th>
+                                        <th className="px-2 py-1 text-right font-semibold">Amount</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {its.map((it, i) => (
+                                        <tr key={i} className="border-t border-border/60">
+                                          <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                                          <td className="px-2 py-1">{it.productName} ({it.size})</td>
+                                          <td className="px-2 py-1 text-right">{inr(Math.abs(Number(it.ratePerBox)))}</td>
+                                          <td className="px-2 py-1 text-right">{Math.abs(it.boxes)}</td>
+                                          <td className="px-2 py-1 text-right font-medium">{inr(Math.abs(it.boxes * Number(it.ratePerBox)))}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : null}
                               <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
                                 <span>Total <b>{inr(Math.abs(Number(p.totalAmount)))}</b></span>
                                 <span>Paid <b>{inr(Math.abs(Number(p.paidAmount)))}</b></span>
