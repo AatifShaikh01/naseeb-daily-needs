@@ -22,6 +22,32 @@ export function SharePurchaseButton({ purchase }: { purchase: PurchaseShareData 
 
   const absBoxes = (b: number) => Math.abs(b);
 
+  /* Sr | Item | Rate | Qty | Amount — monospace table, WhatsApp-friendly. */
+  const padR = (s: string, n: number) => (s.length >= n ? s : s + " ".repeat(n - s.length));
+  const padL = (s: string, n: number) => (s.length >= n ? s : " ".repeat(n - s.length) + s);
+  const rows = purchase.items.map((it, i) => {
+    const boxes = absBoxes(it.boxes);
+    const amt = boxes * it.ratePerBox;
+    return {
+      sr: String(i + 1),
+      name: `${it.productName} (${it.size})`.slice(0, 22),
+      rate: String(it.ratePerBox),
+      qty: String(boxes),
+      amt: String(amt),
+    };
+  });
+  const wSr = Math.max(2, ...rows.map((r) => r.sr.length));
+  const wName = Math.max(4, ...rows.map((r) => r.name.length));
+  const wRate = Math.max(4, ...rows.map((r) => r.rate.length));
+  const wQty = Math.max(3, ...rows.map((r) => r.qty.length));
+  const wAmt = Math.max(6, ...rows.map((r) => r.amt.length));
+  const table = [
+    `${padR("Sr", wSr)} ${padR("Item", wName)} ${padL("Rate", wRate)} ${padL("Qty", wQty)} ${padL("Amount", wAmt)}`,
+    ...rows.map(
+      (r) => `${padR(r.sr, wSr)} ${padR(r.name, wName)} ${padL(r.rate, wRate)} ${padL(r.qty, wQty)} ${padL(r.amt, wAmt)}`,
+    ),
+  ].join("\n");
+
   const msg = [
     `*Purchase #${String(purchase.id).padStart(4, "0")}*`,
     `Supplier: ${purchase.supplierName}`,
@@ -29,11 +55,9 @@ export function SharePurchaseButton({ purchase }: { purchase: PurchaseShareData 
     `Type: ${purchase.direction === "in" ? "Stock In" : "Return"}`,
     `Status: ${purchase.paymentStatus}`,
     "",
-    "*Items:*",
-    ...purchase.items.map(
-      (it) =>
-        `• ${it.productName} (${it.size}) × ${absBoxes(it.boxes)} @ ${money(it.ratePerBox)}/box = ${money(absBoxes(it.boxes) * it.ratePerBox)}`,
-    ),
+    "```",
+    table,
+    "```",
     "",
     `*Total:* ${money(Math.abs(purchase.totalAmount))}`,
     `*Paid:* ${money(Math.abs(purchase.paidAmount))}`,

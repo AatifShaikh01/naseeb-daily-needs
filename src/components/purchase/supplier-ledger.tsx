@@ -95,9 +95,9 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                       const isDeleting = deletingId === p.id;
                       return (
                         <li key={p.id} className="py-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="flex justify-between">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="font-semibold">{fmtDate(p.entryDate)}</span>
                                 <span className={rb(p.direction)}>{p.direction === "in" ? "Stock In" : "Return"}</span>
                               </div>
@@ -109,7 +109,7 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                                 {p.note ? <span className="text-muted-foreground">· {p.note}</span> : null}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <Button variant="outline" size="sm" disabled={isDeleting} onClick={() => setEditingId(isEditing ? null : p.id)} className="text-xs">{isEditing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Pencil className="h-3 w-3 mr-1" />}{isEditing ? "Editing…" : "Edit"}</Button>
                               <SharePurchaseButton purchase={{ id: p.id, entryDate: p.entryDate, supplierName: s.name, direction: p.direction, paymentStatus: ps(p.totalAmount, p.paidAmount), totalAmount: Math.abs(Number(p.totalAmount)), paidAmount: Math.abs(Number(p.paidAmount)), items: its.map(it => ({ productName: it.productName, size: it.size, boxes: Math.abs(it.boxes), ratePerBox: Number(it.ratePerBox) })) }} />
                               {!confirmingDelete ? <Button variant="destructive" size="sm" disabled={isDeleting} onClick={() => { setDeletingId(p.id); setConfirmingDelete(true); }} className="text-xs">{isDeleting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}Delete</Button> : <span className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-1.5"><span className="text-xs font-medium text-destructive">Delete this purchase?</span><Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)} disabled={isDeleting}>{isDeleting ? <Loader2 className="animate-spin" /> : null} Yes</Button><Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>No</Button></span>}
