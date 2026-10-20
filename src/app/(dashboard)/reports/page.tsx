@@ -80,13 +80,13 @@ export default async function ReportsPage({
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           {/* Daily Report Section */}
-          <div id="daily-section">
+          <div id="daily-section" className="min-w-0">
             
             <Card className="mt-6">
               <CardHeader>
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle>Daily Report</CardTitle>
-                  <form method="get" className="no-print flex shrink-0 items-center gap-2">
+                  <form method="get" className="no-print flex max-w-full flex-wrap items-center gap-2">
                     <label htmlFor="date" className="text-sm text-muted-foreground">
                       Date
                     </label>
@@ -95,7 +95,7 @@ export default async function ReportsPage({
                       name="date"
                       type="date"
                       defaultValue={dailyDate}
-                      className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      className="min-w-0 max-w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     />
                     <button
                       type="submit"
@@ -180,13 +180,13 @@ export default async function ReportsPage({
           </div>
 
           {/* Monthly Report Section */}
-          <div id="monthly-section">
+          <div id="monthly-section" className="min-w-0">
             
             <Card className="mt-6">
               <CardHeader>
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle>Monthly Report</CardTitle>
-                  <form method="get" className="no-print flex shrink-0 items-center gap-2">
+                  <form method="get" className="no-print flex max-w-full flex-wrap items-center gap-2">
                     <label htmlFor="month" className="text-sm text-muted-foreground">
                       Month
                     </label>
@@ -195,7 +195,7 @@ export default async function ReportsPage({
                       name="month"
                       type="month"
                       defaultValue={month}
-                      className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      className="min-w-0 max-w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     />
                     <button
                       type="submit"
