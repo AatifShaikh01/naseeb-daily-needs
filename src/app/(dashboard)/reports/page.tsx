@@ -228,7 +228,8 @@ export default async function ReportsPage({
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Product Sales</h3>
-                  <table className="w-full text-sm">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[440px] text-sm">
                     <thead>
                       <tr className="border-b border-border/60 text-left text-muted-foreground">
                         <th className="py-2 pr-2 font-medium">Product</th>
@@ -248,11 +249,13 @@ export default async function ReportsPage({
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Customer Sales</h3>
-                  <table className="w-full text-sm">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[380px] text-sm">
                     <thead>
                       <tr className="border-b border-border/60 text-left text-muted-foreground">
                         <th className="py-2 pr-2 font-medium">Customer</th>
@@ -270,6 +273,7 @@ export default async function ReportsPage({
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <div className="mt-4 border-t border-border/60 pt-4">
