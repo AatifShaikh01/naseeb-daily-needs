@@ -10,8 +10,6 @@
  * Run (dry run):  node --env-file=.env.local scripts/merge-campa-purchase.mjs
  * Apply:          node --env-file=.env.local scripts/merge-campa-purchase.mjs --apply
  */
-import { writeFileSync } from "node:fs";
-
 import { Pool } from "pg";
 
 const APPLY = process.argv.includes("--apply");

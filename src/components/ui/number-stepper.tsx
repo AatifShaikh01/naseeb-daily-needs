@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
 
 /** Number input with big +/- buttons (tap-friendly).
@@ -27,11 +27,14 @@ export function NumberStepper({
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   // null = parent value dikhao; string = user jo type kar raha hai wahi dikhao
   const [text, setText] = useState<string | null>(null);
-
-  // +/- dabane ya bahar se value badalne par typed text hatao
-  useEffect(() => {
-    setText(null);
-  }, [value]);
+  /* Track the last value we rendered. When the parent pushes a NEW value we
+   * clear the typed text so the input follows the parent again. Doing this
+   * during render (instead of in an effect) avoids the extra render pass. */
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (text !== null) setText(null);
+  }
 
   return (
     <div className="flex min-w-0 items-center gap-1.5">

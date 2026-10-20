@@ -20,7 +20,6 @@ const money = (v: number) => `₹${v.toLocaleString("en-IN")}`;
 export function SharePurchaseButton({ purchase }: { purchase: PurchaseShareData }) {
   const [busy, setBusy] = useState(false);
 
-  const sign = purchase.direction === "return" ? -1 : 1;
   const absBoxes = (b: number) => Math.abs(b);
 
   const msg = [

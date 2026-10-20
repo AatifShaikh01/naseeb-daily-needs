@@ -2,9 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
 import bcrypt from "bcryptjs";
-import * as schema from "./schema";
 
 async function main() {
   const url = process.env.DATABASE_URL ?? "";
@@ -12,7 +10,6 @@ async function main() {
     throw new Error("DATABASE_URL missing hai — .env.local me real value daalke phir `npm run db:seed` chalao.");
   }
   const sql = neon(url);
-  const db = drizzle({ client: sql, schema });
 
   // 1) Default owner: username `naseeb`, PIN `1234` (pehle login par change karna hoga)
   const pinHash = await bcrypt.hash("1234", 10);

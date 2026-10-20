@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -43,33 +43,34 @@ export function PurchaseForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const editing = Boolean(purchase);
-  const [supplierId, setSupplierId] = useState(suppliers[0]?.id ?? 0);
-  const [direction, setDirection] = useState<"in" | "return">("in");
-  const [status, setStatus] = useState<"paid" | "pending" | "partial">("pending");
-  const [paidInput, setPaidInput] = useState("");
-  const [rows, setRows] = useState<Row[]>([{ key: 1, productId: products[0]?.id ?? 0, boxes: 1, rateText: "" }]);
-  const [nextKey, setNextKey] = useState(2);
-
-  // Pre-fill form when editing an existing purchase. Depend on the purchase id
-  // (not the object) so unrelated re-renders don't wipe in-progress edits.
-  const editId = purchase?.id;
-  useEffect(() => {
-    if (!editing || !purchase) return;
-    setSupplierId(purchase.supplierId);
-    setDirection(purchase.direction);
-    setStatus(purchase.paymentStatus);
-    setPaidInput(String(purchase.paidAmount || ""));
-    setRows(
-      purchase.items.map((it, i) => ({
-        key: i + 1,
-        productId: it.productId,
-        boxes: it.boxes,
-        rateText: String(it.ratePerBox),
-      })),
-    );
-    setNextKey(purchase.items.length + 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, editId]);
+  /* Editing mode: the form is mounted with a `key` of the purchase id, so the
+   * initial state can be read straight from the `purchase` prop. That avoids
+   * setState-in-effect (extra render pass) and keeps the fields in sync. */
+  const [supplierId, setSupplierId] = useState(
+    purchase?.supplierId ?? suppliers[0]?.id ?? 0,
+  );
+  const [direction, setDirection] = useState<"in" | "return">(
+    purchase?.direction ?? "in",
+  );
+  const [status, setStatus] = useState<"paid" | "pending" | "partial">(
+    purchase?.paymentStatus ?? "pending",
+  );
+  const [paidInput, setPaidInput] = useState(
+    purchase ? String(purchase.paidAmount || "") : "",
+  );
+  const [rows, setRows] = useState<Row[]>(() =>
+    purchase
+      ? purchase.items.map((it, i) => ({
+          key: i + 1,
+          productId: it.productId,
+          boxes: it.boxes,
+          rateText: String(it.ratePerBox),
+        }))
+      : [{ key: 1, productId: products[0]?.id ?? 0, boxes: 1, rateText: "" }],
+  );
+  const [nextKey, setNextKey] = useState(
+    purchase ? purchase.items.length + 1 : 2,
+  );
 
   const addRow = useCallback(() => {
     const lastRate = rows[rows.length - 1]?.rateText ?? "";
@@ -148,6 +149,12 @@ export function PurchaseForm({
           </button>
         ))}
       </div>
+      {/* A purchase already adds its boxes to stock — entering the same goods
+       * again from the Stock In page would count them twice. */}
+      <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        Saving this purchase already adds the boxes to stock. Isi maal ko Stock In
+        page par dobara mat daalein — warna stock double count hoga.
+      </p>
       {/* ROWS2 */}
       {rows.map((row, i) => (
         <div key={row.key} className="space-y-2 rounded-xl border border-border/60 p-3">

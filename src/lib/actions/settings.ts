@@ -43,7 +43,7 @@ export async function getSettingsAction(): Promise<SettingsActionResult> {
       businessName,
       businessPhone,
     };
-  } catch (err) {
+  } catch {
     return { error: "Failed to load settings." };
   }
 }
@@ -85,7 +85,7 @@ export async function updateSettingAction(
     }
     revalidatePath("/settings");
     return { ok: true };
-  } catch (err) {
+  } catch {
     return { error: "Could not update setting." };
   }
 }

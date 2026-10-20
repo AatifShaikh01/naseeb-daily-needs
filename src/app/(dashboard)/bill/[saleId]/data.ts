@@ -5,7 +5,6 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { db, products, saleItems, sales } from "@/db";
 import { getSession } from "@/lib/actions/auth";
 import { redirect } from "next/navigation";
-import { SHOP } from "@/lib/shop";
 
 type BillItem = {
   productName: string;

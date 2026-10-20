@@ -40,3 +40,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local db-inspection / debug scratch files
+db-inspect*.cjs
+db-out*.txt
+check-db.mjs
+test-db.mjs
+pend-*.txt
+pend-*.log
+pend-*.out
+backup-*.json
+backup-*.txt
+merge-dry.txt
+merge-applied.txt
+build-log.txt
