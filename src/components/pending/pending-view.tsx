@@ -215,13 +215,13 @@ export function PendingView({
 
             {open ? (
               <div className="space-y-3 border-t border-border p-4">
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 min-[420px]:flex-row">
                   <Button className="flex-1" onClick={() => setPayTarget({ kind: "customer", customer: c })}>
                     <Wallet /> Receive Payment
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 whitespace-normal"
                     onClick={() => setWa({ message: buildReminderMessage(c), phone: c.phone })}
                   >
                     <MessageCircle /> WhatsApp Reminder
