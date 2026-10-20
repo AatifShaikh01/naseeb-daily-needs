@@ -85,7 +85,7 @@ export default async function MorePage() {
         </CardHeader>
         <CardContent>
           <p className="mb-3 text-sm text-muted-foreground">
-            Home screen par app icon lagao — fast open, full-screen, offline support.
+            Add an app icon to the home screen with quick launch, full-screen display, and offline support.
           </p>
           <PwaInstallButton />
         </CardContent>

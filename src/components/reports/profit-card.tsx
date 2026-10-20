@@ -12,7 +12,7 @@ export function ProfitCard({ month, monthLabel, profit }: { month: string; month
       <CardHeader>
         <CardTitle>Monthly Profit — {monthLabel}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Har product kitne me aaya vs kitne me bika — sirf beche gaye boxes par profit.
+          How much did each product kit cost, and how much was it sold for? Calculate profit only on the boxes that were sold.
         </p>
       </CardHeader>
       <CardContent>

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Header } from "@/components/layout/header";
+import { RouteProgress } from "@/components/layout/route-progress";
 import { Sidebar } from "@/components/layout/sidebar";
 
 // Note: Header session ke liye cookies() padhta hai,
@@ -16,6 +17,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <RouteProgress />
       <Suspense
         fallback={
           <div className="sticky top-0 z-30 border-b border-border bg-card">

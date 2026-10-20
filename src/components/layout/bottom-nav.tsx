@@ -1,16 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 /** Mobile ke liye bottom navigation bar — desktop pe hidden.
  * Ref-style floating pill: rounded bar + beech me utha hua center (Sale) button.
+ * prefetch: aas-paas wale tabs pehle se load, taaki switch instant lage.
  */
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  // Idle time me baki tabs prefetch — tab switch turant lagega
+  useEffect(() => {
+    const idle = (fn: () => void) =>
+      "requestIdleCallback" in window
+        ? (window as unknown as { requestIdleCallback: (f: () => void) => void }).requestIdleCallback(fn)
+        : setTimeout(fn, 1500);
+    idle(() => {
+      for (const item of NAV_ITEMS) router.prefetch(item.href);
+    });
+  }, [router]);
   // Bill page par bottom nav nahi dikhna chahiye — full page bill view
   if (pathname.startsWith("/bill/")) return null;
 
