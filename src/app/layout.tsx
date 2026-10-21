@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import type { ReactNode } from "react";
 
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { APP_NAME } from "@/lib/navigation";
 
 import "./globals.css";
+import { SplashScreen } from "@/components/splash-screen";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,10 +43,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full">
+        <SplashScreen />
         {children}
         <ServiceWorkerRegister />
         <Toaster richColors position="top-center" />
