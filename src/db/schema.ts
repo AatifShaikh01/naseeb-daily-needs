@@ -45,15 +45,64 @@ export const users = pgTable(
   (t) => [uniqueIndex("users_username_unique").on(t.username)],
 );
 
-/* Staff — "Delivered By" dropdown me dikhte hain (inka login nahi hai) */
+/* Staff — ab login support ke saath (staff ID + PIN se login kar sakte hain) */
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  staffId: text("staff_id").notNull().unique(),
+  phone: text("phone"),
+  pinHash: text("pin_hash"),
+  role: pgEnum("staff_role", ["admin", "staff"]).notNull().default("staff"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+},
+(t) => [uniqueIndex("staff_staff_id_unique").on(t.staffId)]);
+
+/* Customers — din ke udhaar customers ki poori history */
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().unique(),
+  email: text("email"),
+  address: text("address"),
+  totalBoxes: integer("total_boxes").notNull().default(0),
+  totalSpent: numeric("total_spent", { precision: 12, scale: 2 }).notNull().default("0"),
+  totalPending: numeric("total_pending", { precision: 12, scale: 2 }).notNull().default("0"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+},
+(t) => [
+  uniqueIndex("customers_phone_unique").on(t.phone),
+]);
+
+/* Customer Payments — alag se customer ko di gayi payment (udhaar recovery) */
+export const customerPayments = pgTable("customer_payments", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id")
+    .notNull()
+    .references(() => customers.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paidOn: date("paid_on").notNull().default(sql`current_date`),
+  mode: paymentModeEnum("mode").notNull().default("cash"),
+  note: text("note").notNull().default(""),
+  staffId: integer("staff_id").references(() => staff.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* Activity Logs — kisne kya kiya (audit trail) */
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  staffId: integer("staff_id").references(() => staff.id),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: integer("entity_id"),
+  details: text("details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+},
+(t) => [index("activity_logs_created_at_idx").on(t.createdAt)]);
 
 /* Products — e.g. Bisleri 500ml, Maaza 1 ltr */
 export const products = pgTable("products", {
@@ -96,6 +145,9 @@ export const sales = pgTable(
     saleDate: date("sale_date").notNull(),
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone"),
+    staffId: integer("staff_id")
+      .notNull()
+      .references(() => staff.id),
     deliveredBy: integer("delivered_by")
       .notNull()
       .references(() => staff.id),
@@ -216,4 +268,7 @@ export type Supplier = typeof suppliers.$inferSelect;
 export type Purchase = typeof purchases.$inferSelect;
 export type PurchaseItem = typeof purchaseItems.$inferSelect;
 export type SupplierPayment = typeof supplierPayments.$inferSelect;
+export type Customer = typeof customers.$inferSelect;
+export type CustomerPayment = typeof customerPayments.$inferSelect;
+export type ActivityLog = typeof activityLogs.$inferSelect;
 

@@ -7,6 +7,7 @@ export type SessionUser = {
   uid: number;
   username: string;
   name: string;
+  role: string;
   mustChangePin: boolean;
 };
 
@@ -24,6 +25,7 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
   return new SignJWT({
     username: user.username,
     name: user.name,
+    role: user.role,
     mcp: user.mustChangePin,
   })
     .setProtectedHeader({ alg: "HS256" })
@@ -43,6 +45,7 @@ export async function verifySessionToken(
       uid: Number(payload.sub),
       username: String(payload.username ?? ""),
       name: String(payload.name ?? ""),
+      role: String(payload.role ?? "staff"),
       mustChangePin: Boolean(payload.mcp),
     };
   } catch {

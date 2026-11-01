@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { db, users } from "@/db";
+import { db, staff, users } from "@/db";
 import { hashPin, PIN_PATTERN, verifyPin } from "@/lib/pin";
 import { recordAttempt, clearAttempts, isLoginAllowed } from "@/lib/rate-limit";
 import {
@@ -46,37 +46,68 @@ export async function loginAction(
     .toLowerCase();
   const pin = String(formData.get("pin") ?? "").trim();
   const next = safeNext(String(formData.get("next") ?? "/"));
+  const role = String(formData.get("role") ?? "owner").toLowerCase();
 
   if (!username || !pin) {
-    return { error: "Username aur PIN dono bharein." };
+    return { error: "Username/Staff ID aur PIN dono bharein." };
   }
 
-  // ---- Rate limiting (simple in‑memory token bucket) ----
-  const remoteAddr = "127.0.0.1"; // In real app, extract from request headers or ip middleware
+  // ---- Rate limiting ---
+  const remoteAddr = "127.0.0.1";
   const allowed = isLoginAllowed(username, remoteAddr);
   if (!allowed) {
-    return { error: "Daayre badh gaye. Kuch din ke liye lock ho gaya. Pehle login karein." };
+    return { error: "Daayre badh gaye. Kuch der baad try karein." };
   }
   recordAttempt(username, remoteAddr);
 
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.username, username))
-    .limit(1);
+  let user: any = null;
+  let isStaff = false;
 
-  if (!user || !(await verifyPin(pin, user.pinHash))) {
-    return { error: "Galat username ya PIN. Dobara try karein." };
+  if (role === "staff") {
+    // Staff login via staffId + pinHash
+    const [staffMember] = await db
+      .select()
+      .from(staff)
+      .where(eq(staff.staffId, username))
+      .limit(1);
+
+    if (!staffMember || !staffMember.pinHash) {
+      return { error: "Staff ID ya PIN galat hai." };
+    }
+    if (!staffMember.isActive) {
+      return { error: "Staff account deactivate hai. Admin se contact karein." };
+    }
+    if (!(await verifyPin(pin, staffMember.pinHash))) {
+      return { error: "Galat PIN. Dobara try karein." };
+    }
+
+    user = staffMember;
+    isStaff = true;
+  } else {
+    // Owner/Admin login via users table
+    const [owner] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
+
+    if (!owner || !(await verifyPin(pin, owner.pinHash))) {
+      return { error: "Galat username ya PIN. Dobara try karein." };
+    }
+
+    user = owner;
+    isStaff = false;
   }
 
-  // Successful login, reset attempts for this user
+  // Successful login, reset attempts
   clearAttempts(username, remoteAddr);
 
   const token = await createSessionToken({
     uid: user.id,
     username: user.username,
     name: user.name,
-    mustChangePin: user.mustChangePin,
+    role: isStaff ? user.role : "owner",
+    mustChangePin: user.mustChangePin ?? false,
   });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, cookieOptions);
