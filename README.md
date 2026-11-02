@@ -26,7 +26,7 @@ Ye app 3 log use karenge — **Owner (Papa), Bhai aur Admin (main)**.
 
 - Node.js 20+ (recommended: latest LTS)
 - npm 10+
-- Neon account (https://neon.tech) — sirf DB phase ke liye zaroori
+- Neon account (<https://neon.tech>) — sirf DB phase ke liye zaroori
 
 ### 2. Install
 
@@ -113,7 +113,7 @@ Icons ek zero-dependency Node script (`scripts/generate-icons.mjs`) se bante hai
 
 ## Folder Structure
 
-```
+```text
 src/
 ├── app/
 │   ├── (dashboard)/          # App shell ke under saare pages
@@ -168,7 +168,7 @@ scripts/
 ## Deploy (Vercel)
 
 1. Code ko GitHub pe push karein.
-2. https://vercel.com/new se repo import karein (framework auto-detect: Next.js).
+2. <https://vercel.com/new> se repo import karein (framework auto-detect: Next.js).
 3. Project Settings → Environment Variables me `DATABASE_URL` add karein.
 4. Deploy — done. PWA mobile me "Add to Home Screen" se install ho jayega.
 

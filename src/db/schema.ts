@@ -27,6 +27,7 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "partial",
 ]);
 export const paymentModeEnum = pgEnum("payment_mode", ["cash", "upi", "bank"]);
+export const staffRoleEnum = pgEnum("staff_role", ["admin", "staff"]);
 
 /* Users — single owner login (username + PIN) */
 export const users = pgTable(
@@ -52,7 +53,7 @@ export const staff = pgTable("staff", {
   staffId: text("staff_id").notNull().unique(),
   phone: text("phone"),
   pinHash: text("pin_hash"),
-  role: pgEnum("staff_role", ["admin", "staff"]).notNull().default("staff"),
+  role: staffRoleEnum("role").notNull().default("staff"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
