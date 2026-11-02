@@ -39,7 +39,10 @@ export async function recordSalePaymentAction(
 
   const { saleId, amount, paidOn, mode } = parsed.data;
 
-  const [sale] = await db.select().from(sales).where(eq(sales.id, saleId));
+  const [sale] = await db
+    .select({ totalAmount: sales.totalAmount, paidAmount: sales.paidAmount })
+    .from(sales)
+    .where(eq(sales.id, saleId));
   if (!sale) return { error: "Sale not found." };
 
   const total = Number(sale.totalAmount);
@@ -83,7 +86,16 @@ export async function recordCustomerPaymentAction(
 
   const { customerName, customerPhone, amount, paidOn, mode, note } = parsed.data;
 
-  const all = await db.select().from(sales);
+  const all = await db
+    .select({
+      id: sales.id,
+      saleDate: sales.saleDate,
+      customerName: sales.customerName,
+      customerPhone: sales.customerPhone,
+      totalAmount: sales.totalAmount,
+      paidAmount: sales.paidAmount,
+    })
+    .from(sales);
   const tn = normName(customerName);
   const tp = normPhone(customerPhone);
   const mine = all

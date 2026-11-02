@@ -24,7 +24,7 @@ export default async function SalesPage({
 
   /* Staff + products (for name lookups + edit form) */
   const [staffRows, productRows, inRows, soldByProduct] = await Promise.all([
-    db.select().from(staff).orderBy(asc(staff.id)),
+    db.select({ id: staff.id, name: staff.name }).from(staff).orderBy(asc(staff.id)),
     db.select().from(products).orderBy(asc(products.id)),
     db
       .select({ productId: stockIn.productId, total: sql<string>`coalesce(sum(${stockIn.boxes}),0)` })
@@ -59,7 +59,17 @@ export default async function SalesPage({
     conds.push(eq(sales.paymentStatus, params.status));
 
   const saleRows = await db
-    .select()
+    .select({
+      id: sales.id,
+      saleDate: sales.saleDate,
+      customerName: sales.customerName,
+      customerPhone: sales.customerPhone,
+      deliveredBy: sales.deliveredBy,
+      paymentStatus: sales.paymentStatus,
+      totalAmount: sales.totalAmount,
+      paidAmount: sales.paidAmount,
+      note: sales.note,
+    })
     .from(sales)
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(sales.saleDate), desc(sales.id))
@@ -188,4 +198,3 @@ export default async function SalesPage({
     </>
   );
 }
-

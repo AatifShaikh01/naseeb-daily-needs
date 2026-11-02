@@ -6,6 +6,13 @@ import { lowStockThreshold } from "@/lib/config";
 
 /* numeric/bigint → number (pg string deta hai) */
 const num = (v: string | number | null | undefined) => Number(v ?? 0);
+const monthBounds = (month: string) => {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return {
+    start: `${month}-01`,
+    end: new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10),
+  };
+};
 export const money = (v: string | number | null | undefined) =>
   num(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -357,8 +364,7 @@ export type MonthlyProfit = {
 };
 
 export async function getMonthlyProfit(month: string): Promise<MonthlyProfit> {
-  const start = `${month}-01`;
-  const end = `${month}-31`;
+  const { start, end } = monthBounds(month);
   const saleRange = and(gte(sales.saleDate, start), lte(sales.saleDate, end));
   const purchRange = and(gte(purchases.entryDate, start), lte(purchases.entryDate, end));
 
@@ -461,8 +467,7 @@ export type MonthlyReport = {
 };
 
 export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
-  const start = `${month}-01`;
-  const end = `${month}-31`;
+  const { start, end } = monthBounds(month);
   const range = and(gte(sales.saleDate, start), lte(sales.saleDate, end));
 
   const [productSales, perSaleRows, staffDelivered, totals] = await Promise.all([

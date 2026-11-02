@@ -44,7 +44,15 @@ export default async function PendingPage() {
   // Pehle sirf udhaar wali sales nikalo (paid wali ka data hi mat kheecho).
   // totalAmount/paidAmount numeric hain — DB me hi pending filter karo.
   const pendingSaleRows = await db
-    .select()
+    .select({
+      id: sales.id,
+      saleDate: sales.saleDate,
+      customerName: sales.customerName,
+      customerPhone: sales.customerPhone,
+      deliveredBy: sales.deliveredBy,
+      totalAmount: sales.totalAmount,
+      paidAmount: sales.paidAmount,
+    })
     .from(sales)
     .where(sql`(${sales.totalAmount} - ${sales.paidAmount}) > 0.005`)
     .orderBy(asc(sales.saleDate), asc(sales.id));
@@ -65,7 +73,10 @@ export default async function PendingPage() {
   }
 
   // Staff + product naam ke liye — sirf zaroori rows
-  const [staffRows, prodRows] = await Promise.all([db.select().from(staff), db.select().from(products)]);
+  const [staffRows, prodRows] = await Promise.all([
+    db.select({ id: staff.id, name: staff.name }).from(staff),
+    db.select().from(products),
+  ]);
 
   const staffMap = new Map(staffRows.map((s) => [s.id, s.name]));
   const prodMap = new Map(prodRows.map((p) => [p.id, p]));
@@ -141,4 +152,3 @@ export default async function PendingPage() {
     </>
   );
 }
-

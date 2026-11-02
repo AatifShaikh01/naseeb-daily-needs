@@ -31,7 +31,19 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [sale] = await db.select().from(sales).where(eq(sales.id, saleId));
+  const [sale] = await db
+    .select({
+      id: sales.id,
+      saleDate: sales.saleDate,
+      customerName: sales.customerName,
+      customerPhone: sales.customerPhone,
+      totalAmount: sales.totalAmount,
+      paidAmount: sales.paidAmount,
+      paymentStatus: sales.paymentStatus,
+      paymentMode: sales.paymentMode,
+    })
+    .from(sales)
+    .where(eq(sales.id, saleId));
   if (!sale) return null;
 
   const items = await db

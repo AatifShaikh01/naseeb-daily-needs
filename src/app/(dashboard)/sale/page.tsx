@@ -15,7 +15,11 @@ export default async function SalePage() {
 
   const [productRows, staffRows, inRows, soldByProduct] = await Promise.all([
     db.select().from(products).where(sql`${products.isActive}`).orderBy(asc(products.id)),
-    db.select().from(staff).where(sql`${staff.isActive}`).orderBy(asc(staff.id)),
+    db
+      .select({ id: staff.id, name: staff.name })
+      .from(staff)
+      .where(sql`${staff.isActive}`)
+      .orderBy(asc(staff.id)),
     db
       .select({ productId: stockIn.productId, total: sql<string>`coalesce(sum(${stockIn.boxes}),0)` })
       .from(stockIn)
@@ -63,4 +67,3 @@ export default async function SalePage() {
     </>
   );
 }
-
