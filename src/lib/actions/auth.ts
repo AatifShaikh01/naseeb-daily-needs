@@ -166,6 +166,7 @@ export async function changePinAction(
     uid: user.id,
     username: user.username,
     name: user.name,
+    role: session.role,
     mustChangePin: false,
   });
   const store = await cookies();

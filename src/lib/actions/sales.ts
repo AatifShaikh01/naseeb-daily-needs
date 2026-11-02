@@ -70,6 +70,7 @@ export async function createSaleAction(
   const [row] = await db
     .insert(sales)
     .values({
+      staffId: deliveredBy,
       saleDate,
       customerName,
       customerPhone,
@@ -141,6 +142,7 @@ export async function updateSaleAction(
   await db
     .update(sales)
     .set({
+      staffId: deliveredBy,
       saleDate,
       customerName,
       customerPhone,

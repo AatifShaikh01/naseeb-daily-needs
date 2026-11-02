@@ -21,7 +21,8 @@ export async function addStaffAction(
   const parsed = staffSchema.safeParse({ name: formData.get("name") });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  await db.insert(staff).values({ name: parsed.data.name });
+  const staffId = `STF${Date.now().toString(36).toUpperCase()}`;
+  await db.insert(staff).values({ name: parsed.data.name, staffId });
   revalidatePath("/settings");
   redirect("/settings?added=1");
 }
