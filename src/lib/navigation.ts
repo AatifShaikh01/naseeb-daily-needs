@@ -2,13 +2,12 @@ import {
   Clock,
   FileText,
   Home,
-  Landmark,
   MoreHorizontal,
   Package,
-  PackagePlus,
   Receipt,
   Settings,
   ShoppingCart,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,11 +35,10 @@ export const NAV_ITEMS: NavItem[] = [
  */
 export const SIDEBAR_ITEMS: NavItem[] = [
   NAV_ITEMS[0],
-  { title: "Stock In", href: "/stock-in", icon: PackagePlus },
   NAV_ITEMS[1],
   NAV_ITEMS[2],
   { title: "Sales", href: "/sales", icon: Receipt },
-  { title: "Purchases", href: "/purchases", icon: Landmark },
+  { title: "Staff Sales", href: "/staff", icon: UsersRound },
   { title: "Products", href: "/products", icon: Package },
   { title: "Reports", href: "/reports", icon: FileText },
   NAV_ITEMS[3],

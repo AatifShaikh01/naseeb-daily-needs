@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { ChevronDown, ShieldCheck } from "lucide-react";
 import { desc } from "drizzle-orm";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -43,18 +43,6 @@ export default async function SettingsPage({
         </p>
       ) : null}
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Bill branding</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Choose a template and set the business details shown on bills, PDFs, and WhatsApp shares.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <BillBrandingForm branding={billBranding} />
-        </CardContent>
-      </Card>
-
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <StaffList rows={rows} />
 
@@ -67,6 +55,23 @@ export default async function SettingsPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
+            <div>
+              <CardTitle>Bill branding</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Business details and template shown on bills, PDFs, and WhatsApp shares.
+              </p>
+            </div>
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <CardContent className="border-t border-border pt-5">
+            <BillBrandingForm branding={billBranding} />
+          </CardContent>
+        </details>
+      </Card>
 
       <Card className="mt-6">
         <CardContent className="flex items-center gap-3 p-4 text-sm text-muted-foreground">

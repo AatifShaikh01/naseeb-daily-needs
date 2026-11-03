@@ -125,7 +125,7 @@ export default async function StaffProfilePage({
     <>
       <div className="mb-4">
         <Button asChild variant="ghost" size="sm">
-          <Link href="/settings"><ArrowLeft /> Settings</Link>
+          <Link href="/staff"><ArrowLeft /> Staff Sales</Link>
         </Button>
       </div>
       <PageHeader
