@@ -15,7 +15,7 @@ export async function Header() {
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 shadow-soft backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="flex min-h-20 items-center justify-between gap-3 px-4 py-3 md:px-6">
         <div className="flex min-w-0 items-center gap-3.5">
-          <Logo height={44} className="shrink-0" />
+          <Logo height={52} className="shrink-0" />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-lg font-extrabold tracking-wide text-foreground sm:text-xl">
               CODRENIX

@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
+import { APP_NAME, APP_SHORT_NAME } from "@/lib/navigation";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "NASEEB DAILY NEEDS & AGENCIES",
-    short_name: "NASEEB",
-    description:
-      "Stock, sales aur pending payment tracking for NASEEB DAILY NEEDS AND AGENCIES.",
+    name: APP_NAME,
+    short_name: APP_SHORT_NAME,
+    description: "Agency ERP for stock, sales, purchases, supplier balances and payments.",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -16,14 +16,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: {
     default: APP_NAME,
-    template: "%s · NASEEB",
+    template: "%s · CODRENIX",
   },
-  description:
-    "Stock, sales aur pending payment tracking for NASEEB DAILY NEEDS AND AGENCIES.",
+  description: "Agency ERP for stock, sales, purchases, supplier balances and payments.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "NASEEB",
+    title: "CODRENIX",
     statusBarStyle: "default",
   },
   icons: {

@@ -20,15 +20,15 @@ export default async function LoginPage({
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
             src="/icon-512.png"
-            alt="Naseeb Daily Needs & Agencies"
+            alt="CODRENIX Agency ERP"
             width={96}
             height={96}
             className="mb-4 block h-24 w-24 rounded-3xl shadow-float"
             priority
           />
-          <h1 className="text-xl font-bold tracking-wide">NASEEB</h1>
+          <h1 className="text-xl font-bold tracking-wide">CODRENIX</h1>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Daily Needs &amp; Agencies
+            Agency ERP
           </p>
         </div>
 

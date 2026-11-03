@@ -48,5 +48,5 @@ export const SIDEBAR_ITEMS: NavItem[] = [
   NAV_ITEMS[4],
 ];
 
-export const APP_NAME = "NASEEB DAILY NEEDS & AGENCIES";
-export const APP_SHORT_NAME = "NASEEB";
+export const APP_NAME = "CODRENIX AGENCY ERP";
+export const APP_SHORT_NAME = "CODRENIX";
