@@ -4,6 +4,7 @@ import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { ArrowLeft, CalendarDays, CircleCheck, Clock3, Phone, ReceiptText } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { CustomerProfilePdf } from "@/components/customers/customer-profile-pdf";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -152,6 +153,34 @@ export default async function CustomerProfilePage({
   const pendingTotal = Math.max(0, totals.pending);
   const advanceTotal = Math.max(0, -totals.pending);
   const totalBoxes = itemRows.reduce((total, item) => total + item.boxes, 0);
+  const pdfSales = customerSales.map((sale) => {
+    const total = Number(sale.totalAmount);
+    const paid = Number(sale.paidAmount);
+    return {
+      id: sale.id,
+      saleDate: sale.saleDate,
+      deliveredBy: staffNames.get(sale.deliveredBy) ?? "—",
+      total,
+      paid,
+      pending: Math.max(0, total - paid),
+      advance: Math.max(0, paid - total),
+      status: status(total, paid),
+      note: sale.note,
+      items: (itemsBySale.get(sale.id) ?? []).map((item) => ({
+        name: item.productName,
+        size: item.productSize,
+        boxes: item.boxes,
+        rate: Number(item.ratePerBox),
+        amount: item.boxes * Number(item.ratePerBox),
+      })),
+      payments: (paymentsBySale.get(sale.id) ?? []).map((payment) => ({
+        paidOn: payment.paidOn,
+        mode: payment.mode,
+        amount: Number(payment.amount),
+        note: payment.note,
+      })),
+    };
+  });
 
   return (
     <>
@@ -161,6 +190,21 @@ export default async function CustomerProfilePage({
         </Button>
       </div>
       <PageHeader title={referenceSale.customerName} description="Complete customer sales and payment history." />
+      <div className="mb-4 flex justify-end">
+        <CustomerProfilePdf
+          customer={{
+            name: referenceSale.customerName,
+            phone: referenceSale.customerPhone,
+            saleCount: customerSales.length,
+            totalBoxes,
+            totalSales: totals.sales,
+            totalPaid: totals.paid,
+            pending: pendingTotal,
+            advance: advanceTotal,
+          }}
+          sales={pdfSales}
+        />
+      </div>
 
       <Card className="mb-6">
         <CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-6">
