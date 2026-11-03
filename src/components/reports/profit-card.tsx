@@ -35,29 +35,29 @@ export function ProfitCard({ month, monthLabel, profit }: { month: string; month
         {profit.rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">Is mahine koi sale nahi hui.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full min-w-[620px] text-sm">
               <thead>
-                <tr className="border-b border-border/60 text-left text-muted-foreground">
-                  <th className="py-2 pr-2 font-medium">Product</th>
-                  <th className="py-2 pr-2 text-right font-medium">Buy rate</th>
-                  <th className="py-2 pr-2 text-right font-medium">Sell rate</th>
-                  <th className="py-2 pr-2 text-right font-medium">Sold</th>
-                  <th className="py-2 text-right font-medium">Profit</th>
+                <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-2 font-medium">Product</th>
+                  <th className="px-3 py-2 text-right font-medium">Buy rate</th>
+                  <th className="px-3 py-2 text-right font-medium">Sell rate</th>
+                  <th className="px-3 py-2 text-right font-medium">Sold</th>
+                  <th className="px-3 py-2 text-right font-medium">Profit</th>
                 </tr>
               </thead>
               <tbody>
                 {profit.rows.map((r) => (
-                  <tr key={`${r.name}-${r.size}`} className="border-b border-border/40">
-                    <td className="py-2 pr-2">
+                  <tr key={`${r.name}-${r.size}`} className="border-t border-border">
+                    <td className="px-3 py-2">
                       {r.name} <span className="text-muted-foreground">({r.size})</span>
                     </td>
-                    <td className="py-2 pr-2 text-right tabular-nums">
+                    <td className="px-3 py-2 text-right tabular-nums">
                       {r.buyRate != null ? `₹${r.buyRate.toLocaleString("en-IN")}` : <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="py-2 pr-2 text-right tabular-nums">₹{r.sellRate.toLocaleString("en-IN")}</td>
-                    <td className="py-2 pr-2 text-right tabular-nums">{r.sellBoxes}</td>
-                    <td className={`py-2 text-right font-semibold tabular-nums ${r.profit >= 0 ? "text-primary" : "text-destructive"}`}>
+                    <td className="px-3 py-2 text-right tabular-nums">₹{r.sellRate.toLocaleString("en-IN")}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{r.sellBoxes}</td>
+                    <td className={`px-3 py-2 text-right font-semibold tabular-nums ${r.profit >= 0 ? "text-primary" : "text-destructive"}`}>
                       ₹{r.profit.toLocaleString("en-IN")}
                     </td>
                   </tr>

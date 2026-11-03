@@ -140,24 +140,26 @@ export default async function ReportsPage({
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Stock In Detail (Date)</h3>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Product</th>
-                        <th className="py-2 pr-2 font-medium">Size</th>
-                        <th className="py-2 font-medium">Boxes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {daily.stockInRows.map((r) => (
-                        <tr key={`${r.productName}-${r.size}`} className="border-b border-border/40">
-                          <td className="py-2 pr-2">{r.productName}</td>
-                          <td className="py-2 pr-2">{r.size}</td>
-                          <td className="py-2 pr-2 tabular-nums">{r.boxes}</td>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
+                          <th className="px-3 py-2 font-medium">Product</th>
+                          <th className="px-3 py-2 font-medium">Size</th>
+                          <th className="px-3 py-2 text-right font-medium">Boxes</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {daily.stockInRows.map((r) => (
+                          <tr key={`${r.productName}-${r.size}`} className="border-t border-border">
+                            <td className="px-3 py-2">{r.productName}</td>
+                            <td className="px-3 py-2">{r.size}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{r.boxes}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -228,72 +230,74 @@ export default async function ReportsPage({
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Product Sales</h3>
-                  <div className="overflow-x-auto">
-                  <table className="w-full min-w-[440px] text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Product</th>
-                        <th className="py-2 pr-2 font-medium">Size</th>
-                        <th className="py-2 font-medium">Boxes Sold</th>
-                        <th className="py-2 font-medium">Amount (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthly.productSales.map((r) => (
-                        <tr key={`${r.name}-${r.size}`} className="border-b border-border/40">
-                          <td className="py-2 pr-2">{r.name}</td>
-                          <td className="py-2 pr-2">{r.size}</td>
-                          <td className="py-2 pr-2 tabular-nums">{r.boxes}</td>
-                          <td className="py-2 pr-2 tabular-nums">₹{r.amount.toLocaleString("en-IN")}</td>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full min-w-[440px] text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
+                          <th className="px-3 py-2 font-medium">Product</th>
+                          <th className="px-3 py-2 font-medium">Size</th>
+                          <th className="px-3 py-2 text-right font-medium">Boxes Sold</th>
+                          <th className="px-3 py-2 text-right font-medium">Amount (₹)</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {monthly.productSales.map((r) => (
+                          <tr key={`${r.name}-${r.size}`} className="border-t border-border">
+                            <td className="px-3 py-2">{r.name}</td>
+                            <td className="px-3 py-2">{r.size}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{r.boxes}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">₹{r.amount.toLocaleString("en-IN")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Customer Sales</h3>
-                  <div className="overflow-x-auto">
-                  <table className="w-full min-w-[380px] text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Customer</th>
-                        <th className="py-2 font-medium">Boxes Sold</th>
-                        <th className="py-2 font-medium">Amount (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthly.customerSales.map((r) => (
-                        <tr key={r.name} className="border-b border-border/40">
-                          <td className="py-2 pr-2">{r.name}</td>
-                          <td className="py-2 pr-2 tabular-nums">{r.boxes}</td>
-                          <td className="py-2 tabular-nums">₹{r.amount.toLocaleString("en-IN")}</td>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full min-w-[380px] text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
+                          <th className="px-3 py-2 font-medium">Customer</th>
+                          <th className="px-3 py-2 text-right font-medium">Boxes Sold</th>
+                          <th className="px-3 py-2 text-right font-medium">Amount (₹)</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {monthly.customerSales.map((r) => (
+                          <tr key={r.name} className="border-t border-border">
+                            <td className="px-3 py-2">{r.name}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{r.boxes}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">₹{r.amount.toLocaleString("en-IN")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Staff Delivery</h3>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-muted-foreground">
-                        <th className="py-2 pr-2 font-medium">Staff</th>
-                        <th className="py-2 font-medium">Boxes Delivered</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthly.staffDelivered.map((r) => (
-                        <tr key={r.name} className="border-b border-border/40">
-                          <td className="py-2 pr-2">{r.name}</td>
-                          <td className="py-2 tabular-nums">{r.boxes}</td>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
+                          <th className="px-3 py-2 font-medium">Staff</th>
+                          <th className="px-3 py-2 text-right font-medium">Boxes Delivered</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {monthly.staffDelivered.map((r) => (
+                          <tr key={r.name} className="border-t border-border">
+                            <td className="px-3 py-2">{r.name}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{r.boxes}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <div className="no-print mt-4 flex flex-wrap gap-2">
