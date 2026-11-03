@@ -4,6 +4,11 @@ import { useState } from "react";
 import { Printer, ArrowLeft, Download, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  getBillContrastColor,
+  getBillReadableAccentColor,
+  type BillBranding,
+} from "@/lib/bill-branding";
 
 type BillPageProps = {
   id: number;
@@ -13,66 +18,150 @@ type BillPageProps = {
   paymentMode: string;
   totalAmount: number;
   paidAmount: number;
+  branding: BillBranding;
   items: { productName: string; productSize: string; boxes: number; ratePerBox: number; amount: number }[];
   payments: { id: number; amount: number; paidOn: string; mode: string; note: string }[];
 };
 
 async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
   const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
-  const billNo = `SALE-${String(bill.id).padStart(4, "0")}`;
+  const billNo = `${bill.branding.billNumberPrefix.toUpperCase()}-${String(bill.id).padStart(4, "0")}`;
       const { jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
 
+      const hex = bill.branding.color.slice(1);
+      const accent: [number, number, number] = [
+        parseInt(hex.slice(0, 2), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(4, 6), 16),
+      ];
       const inr = (n: number) => `Rs.${n.toLocaleString("en-IN")}`;
       const doc = new jsPDF({ unit: "pt", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const M = 40;
       const C = pageW - M;
-      const green: [number, number, number] = [15, 118, 110];
+      const green = accent;
       const grey: [number, number, number] = [110, 110, 110];
       const dark: [number, number, number] = [30, 30, 30];
+      const inverseHeader = bill.branding.template === "bold" || bill.branding.template === "split";
+      const titleHex =
+        inverseHeader
+          ? getBillContrastColor(bill.branding.color)
+          : getBillReadableAccentColor(bill.branding.color);
+      const businessHex =
+        bill.branding.template === "bold"
+          ? getBillContrastColor(bill.branding.color)
+          : getBillReadableAccentColor(bill.branding.color);
+      const businessColor: [number, number, number] = [
+        parseInt(businessHex.slice(1, 3), 16),
+        parseInt(businessHex.slice(3, 5), 16),
+        parseInt(businessHex.slice(5, 7), 16),
+      ];
+      const titleColor: [number, number, number] = [
+        parseInt(titleHex.slice(1, 3), 16),
+        parseInt(titleHex.slice(3, 5), 16),
+        parseInt(titleHex.slice(5, 7), 16),
+      ];
 
-      let y = 48;
-
-      // Logo + shop header (web bill jaisa)
+      let y = 52;
       const LOGO = 52;
-      try {
-        const blob = await fetch("/image.png").then((r) => {
-          if (!r.ok) throw new Error("logo");
-          return r.blob();
-        });
-        const dataUrl: string = await new Promise((res, rej) => {
-          const fr = new FileReader();
-          fr.onloadend = () => res(fr.result as string);
-          fr.onerror = rej;
-          fr.readAsDataURL(blob);
-        });
-        doc.addImage(dataUrl, "PNG", M, y - 28, LOGO, LOGO);
-      } catch { /* logo optional — text header hi rahega */ }
-
-      const tx = M + LOGO + 12;
-      doc.setTextColor(green[0], green[1], green[2]);
+      const minimal = bill.branding.template === "minimal";
+      const tx = minimal ? pageW / 2 : M + LOGO + 12;
+      const textWidth = minimal ? pageW - M * 2 - 130 : C - tx - 105;
+      const businessDetails = [
+        bill.branding.businessPhone,
+        bill.branding.businessAddress,
+        bill.branding.gstin ? `GSTIN: ${bill.branding.gstin}` : "",
+      ].filter(Boolean).join(" · ");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(19);
-      doc.text("Naseeb Daily Needs & Agencies", tx, y - 6);
-      doc.setTextColor(grey[0], grey[1], grey[2]);
+      const nameLines = doc.splitTextToSize(bill.branding.businessName, textWidth);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.5);
-      doc.text("shaikh shahbaz : 9049642155", tx, y + 10);
-      doc.text("tipu sultan chawk momin pura deulghat", tx, y + 24);
+      const detailLines = businessDetails ? doc.splitTextToSize(businessDetails, textWidth) : [];
+      const contentY = minimal ? y + 34 : y - 6;
+      const detailsY = contentY + nameLines.length * 22;
+      const headerBottom = Math.max(
+        y + 42,
+        detailsY + detailLines.length * 13 + (minimal ? 12 : 0),
+      );
 
-      // BILL NO. top-right (screenshot jaisa)
+      if (bill.branding.template === "bold") {
+        doc.setFillColor(green[0], green[1], green[2]);
+        doc.roundedRect(M, y - 34, pageW - M * 2, headerBottom - y + 40, 8, 8, "F");
+      } else if (bill.branding.template === "modern") {
+        doc.setFillColor(245, 248, 248);
+        doc.roundedRect(M, y - 30, pageW - M * 2, headerBottom - y + 36, 8, 8, "F");
+        doc.setFillColor(green[0], green[1], green[2]);
+        doc.rect(M, y - 30, 5, headerBottom - y + 36, "F");
+      } else if (bill.branding.template === "elegant") {
+        doc.setDrawColor(green[0], green[1], green[2]);
+        doc.setLineWidth(0.7);
+        doc.line(M, y - 30, C, y - 30);
+      } else if (bill.branding.template === "split") {
+        doc.setFillColor(green[0], green[1], green[2]);
+        doc.roundedRect(C - 112, y - 30, 112, 72, 8, 8, "F");
+      }
+
+      try {
+        let dataUrl = bill.branding.logoDataUrl;
+        if (dataUrl === "/image.png") {
+          const blob = await fetch("/image.png").then((response) => {
+            if (!response.ok) throw new Error("logo");
+            return response.blob();
+          });
+          dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(String(reader.result));
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+        if (dataUrl) {
+          doc.addImage(
+            dataUrl,
+            dataUrl.startsWith("data:image/png") ? "PNG" : "JPEG",
+            minimal ? pageW / 2 - LOGO / 2 : M,
+            y - 24,
+            LOGO,
+            LOGO,
+          );
+        }
+      } catch { /* logo optional — text header hi rahega */ }
+
+      const boldHeader = bill.branding.template === "bold";
+      const align = minimal ? "center" : "left";
+      doc.setTextColor(businessColor[0], businessColor[1], businessColor[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(19);
+      doc.text(nameLines, tx, contentY, { align });
+      doc.setTextColor(boldHeader ? titleColor[0] : grey[0], boldHeader ? titleColor[1] : grey[1], boldHeader ? titleColor[2] : grey[2]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      if (detailLines.length) doc.text(detailLines, tx, detailsY, { align });
+
+      // Bill label and number stay visible across every template.
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.setTextColor(grey[0], grey[1], grey[2]);
-      doc.text("BILL NO.", C, y - 18, { align: "right" });
+      doc.setTextColor(inverseHeader ? titleColor[0] : grey[0], inverseHeader ? titleColor[1] : grey[1], inverseHeader ? titleColor[2] : grey[2]);
+      doc.text(bill.branding.billTitle.toUpperCase(), C - (bill.branding.template === "split" ? 8 : 0), y - 18, { align: "right" });
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);
-      doc.setTextColor(dark[0], dark[1], dark[2]);
-      doc.text(doc.splitTextToSize(billNo, 130), C, y + 2, { align: "right" });
+      doc.setTextColor(inverseHeader ? titleColor[0] : dark[0], inverseHeader ? titleColor[1] : dark[1], inverseHeader ? titleColor[2] : dark[2]);
+      doc.text(
+        doc.splitTextToSize(billNo, 96),
+        C - (bill.branding.template === "split" ? 8 : 0),
+        y + 2,
+        { align: "right" },
+      );
 
-      // green divider
-      y += 30;
+      if (bill.branding.template === "elegant") {
+        doc.setDrawColor(green[0], green[1], green[2]);
+        doc.line(M, headerBottom, C, headerBottom);
+      }
+
+      // Accent divider
+      y = headerBottom + 12;
       doc.setDrawColor(green[0], green[1], green[2]);
       doc.setLineWidth(2.5);
       doc.line(M, y, C, y);
@@ -116,7 +205,11 @@ async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
           inr(it.amount),
         ]),
         styles: { font: "helvetica", fontSize: 10.5, cellPadding: 8, textColor: [30, 30, 30] },
-        headStyles: { fillColor: [255, 255, 255], textColor: [120, 120, 120], fontSize: 9.5 },
+        headStyles: {
+          fillColor: bill.branding.template === "bold" ? green : [255, 255, 255],
+          textColor: bill.branding.template === "bold" ? [255, 255, 255] : titleColor,
+          fontSize: 9.5,
+        },
         bodyStyles: { lineWidth: { bottom: 0.5 }, lineColor: [235, 235, 235] },
         columnStyles: {
           0: { halign: "left" },
@@ -165,7 +258,11 @@ async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
             payment.note,
           ]),
           styles: { font: "helvetica", fontSize: 9.5, cellPadding: 5, textColor: [30, 30, 30] },
-          headStyles: { fillColor: [255, 255, 255], textColor: [120, 120, 120], fontSize: 8.5 },
+          headStyles: {
+            fillColor: bill.branding.template === "bold" ? green : [255, 255, 255],
+            textColor: bill.branding.template === "bold" ? [255, 255, 255] : titleColor,
+            fontSize: 8.5,
+          },
           bodyStyles: { lineWidth: { bottom: 0.5 }, lineColor: [235, 235, 235] },
           columnStyles: { 2: { halign: "right" } },
           margin: { left: M, right: M },
@@ -184,9 +281,14 @@ async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(grey[0], grey[1], grey[2]);
-      doc.text("Thank you for your business!", pageW / 2, y, { align: "center" });
+      doc.text(bill.branding.footer || " ", pageW / 2, y, { align: "center" });
       doc.setFontSize(8.5);
-      const foot = "Naseeb Daily Needs & Agencies · shaikh shahbaz : 9049642155 · tipu sultan chawk momin pura deulghat";
+      const foot = [
+        bill.branding.businessName,
+        bill.branding.businessPhone,
+        bill.branding.businessAddress,
+        bill.branding.gstin ? `GSTIN: ${bill.branding.gstin}` : "",
+      ].filter(Boolean).join(" · ");
       doc.text(doc.splitTextToSize(foot, C - M), pageW / 2, y + 14, { align: "center" });
 
       return doc.output("blob");
@@ -244,7 +346,7 @@ export function ShareBillButton({ bill }: { bill: BillPageProps }) {
   const [busy, setBusy] = useState(false);
   const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
   const money = (v: number) => `₹${v.toLocaleString("en-IN")}`;
-  const billNo = `SALE-${String(bill.id).padStart(4, "0")}`;
+  const billNo = `${bill.branding.billNumberPrefix.toUpperCase()}-${String(bill.id).padStart(4, "0")}`;
   const pdfFileName = `sale-${String(bill.id).padStart(4, "0")}-bill.pdf`;
 
   const shareOnWhatsApp = async () => {
@@ -264,7 +366,7 @@ export function ShareBillButton({ bill }: { bill: BillPageProps }) {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `Bill ${billNo} - Naseeb Daily Needs`,
+          title: `Bill ${billNo} - ${bill.branding.businessName}`,
           text: shareText,
         });
         return;
@@ -273,7 +375,7 @@ export function ShareBillButton({ bill }: { bill: BillPageProps }) {
       saveBlob(blob, pdfFileName);
       const phone = (bill.customerPhone || "").replace(/\D/g, "");
       const msg = encodeURIComponent(
-        `Bill ${billNo} - Naseeb Daily Needs & Agencies\nCustomer: ${bill.customerName}\nTotal: ${money(pending)} pending (Total ${money(bill.totalAmount)}, Paid ${money(bill.paidAmount)})\nPayment history:\n${paymentLines.length ? paymentLines.join("\n") : "No payment entries recorded"}\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
+        `Bill ${billNo} - ${bill.branding.businessName}\nCustomer: ${bill.customerName}\nTotal: ${money(pending)} pending (Total ${money(bill.totalAmount)}, Paid ${money(bill.paidAmount)})\nPayment history:\n${paymentLines.length ? paymentLines.join("\n") : "No payment entries recorded"}\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
       );
       window.open(`https://wa.me/${phone ? `91${phone.slice(-10)}` : ""}?text=${msg}`, "_blank");
     } finally {

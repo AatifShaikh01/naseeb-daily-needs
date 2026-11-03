@@ -4,7 +4,9 @@ import { asc, eq, inArray } from "drizzle-orm";
 
 import { db, payments, products, saleItems, sales } from "@/db";
 import { getSession } from "@/lib/actions/auth";
+import { getBillBranding } from "@/lib/actions/bill-branding";
 import { redirect } from "next/navigation";
+import type { BillBranding } from "@/lib/bill-branding";
 
 type BillItem = {
   productName: string;
@@ -23,6 +25,7 @@ type BillData = {
   paidAmount: number;
   paymentStatus: string;
   paymentMode: string;
+  branding: BillBranding;
   items: BillItem[];
   payments: { id: number; amount: number; paidOn: string; mode: string; note: string }[];
 };
@@ -47,7 +50,7 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
     .where(eq(sales.id, saleId));
   if (!sale) return null;
 
-  const [items, paymentRows] = await Promise.all([
+  const [items, paymentRows, branding] = await Promise.all([
     db
     .select({
       productId: saleItems.productId,
@@ -68,6 +71,7 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
       .from(payments)
       .where(eq(payments.saleId, saleId))
       .orderBy(asc(payments.paidOn), asc(payments.id)),
+    getBillBranding(),
   ]);
 
   const productIds = items.map((i) => i.productId);
@@ -102,6 +106,7 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
     paidAmount: Number(sale.paidAmount),
     paymentStatus: sale.paymentStatus,
     paymentMode: sale.paymentMode,
+    branding,
     items: billItems,
     payments: paymentRows.map((payment) => ({
       ...payment,

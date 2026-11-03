@@ -1,9 +1,9 @@
 ﻿import { getBillData } from "./data";
 import { PrintButton, ShareBillButton } from "./print-button";
 import { formatDate } from "@/lib/dates";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import { SHOP } from "@/lib/shop";
+import { BillHeader } from "@/components/bill/bill-header";
+import { getBillReadableAccentColor } from "@/lib/bill-branding";
 
 
 
@@ -32,74 +32,22 @@ export default async function BillPage({
 
 
   const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
+  const { branding } = bill;
+  const billStyle = { "--bill-accent": branding.color } as React.CSSProperties;
 
 
 
   return (
 
-    <div data-bill-sheet className="max-w-[700px] mx-auto p-6 sm:p-10 bg-white">
+    <div data-bill-sheet className="mx-auto max-w-[700px] bg-white p-6 sm:p-10" style={billStyle}>
 
-      <PrintButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments }} />
+      <PrintButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments, branding }} />
 
       <div id="bill">
-
-        <div className="flex items-start justify-between mb-8 border-b-2 border-primary pb-4">
-
-          <div className="flex items-center gap-3">
-
-            <Image
-
-              src="/image.png"
-
-              alt="Naseeb Daily Needs & Agencies"
-
-              width={56}
-
-              height={56}
-
-              className="rounded-lg object-contain shrink-0"
-
-              priority
-
-              unoptimized
-            />
-
-            <div>
-
-              <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-
-                Naseeb Daily Needs & Agencies
-
-              </h1>
-
-              <p className="text-xs text-muted-foreground leading-tight">
-
-                {SHOP.contact}<br />
-
-                {SHOP.address}
-
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="text-right">
-
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-
-              Bill No.
-
-            </p>
-
-            <p className="text-xl font-bold text-foreground">
-
-              SALE-{String(bill.id).padStart(4, "0")}
-
-            </p>
-
-          </div>
-        </div>
+        <BillHeader
+          branding={branding}
+          billNumber={String(bill.id).padStart(4, "0")}
+        />
 
         <div className="grid grid-cols-2 gap-4 mb-6">
 
@@ -177,7 +125,10 @@ export default async function BillPage({
 
           <thead>
 
-            <tr className="border-b border-border/60 text-left text-muted-foreground uppercase text-[11px]">
+            <tr
+              className="border-b text-left text-muted-foreground uppercase text-[11px]"
+              style={{ borderColor: branding.color }}
+            >
 
               <th className="py-3 pr-2 font-medium">Item</th>
 
@@ -221,7 +172,7 @@ export default async function BillPage({
 
             ))}
 
-            <tr className="border-t-2 border-primary pt-4">
+            <tr className="border-t-2 pt-4" style={{ borderColor: branding.color }}>
 
               <td className="py-2 pr-2 text-right font-bold text-foreground" colSpan={3}>
 
@@ -274,7 +225,10 @@ export default async function BillPage({
         </table>
 
         <div className="mb-6">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2
+            className="mb-2 text-xs font-semibold uppercase tracking-wide"
+            style={{ color: getBillReadableAccentColor(branding.color) }}
+          >
             Payment History
           </h2>
           {bill.payments.length ? (
@@ -303,17 +257,17 @@ export default async function BillPage({
 
 
 
-        <p className="text-center text-xs text-muted-foreground mt-8">
+        <p className="mt-8 text-center text-xs text-muted-foreground">
 
-          Thank you for your business!<br />
+          {branding.footer}<br />
 
-          {SHOP.name} · {SHOP.contact} · {SHOP.address}
+          {[branding.businessName, branding.businessPhone, branding.businessAddress].filter(Boolean).join(" · ")}
 
         </p>
 
       </div>
 
-      <ShareBillButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments }} />
+      <ShareBillButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments, branding }} />
 
 
 
@@ -328,4 +282,3 @@ export default async function BillPage({
   );
 
 }
-

@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StaffForm } from "@/components/settings/staff-form";
 import { StaffList } from "@/components/settings/staff-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BillBrandingForm } from "@/components/settings/bill-branding-form";
+import { getBillBranding } from "@/lib/actions/bill-branding";
 import { db, staff } from "@/db";
 
 export const metadata = { title: "Settings" };
@@ -20,12 +22,13 @@ export default async function SettingsPage({
     .select({ id: staff.id, name: staff.name, isActive: staff.isActive })
     .from(staff)
     .orderBy(desc(staff.id));
+  const billBranding = await getBillBranding();
 
   return (
     <>
       <PageHeader
         title="Settings"
-        description="Staff names that appear in the Delivered By dropdown. Deactivated staff are hidden from new sales."
+        description="Customize bill branding and manage staff names used in the Delivered By dropdown."
       />
 
       {added ? (
@@ -33,6 +36,18 @@ export default async function SettingsPage({
           Staff added.
         </p>
       ) : null}
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Bill branding</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Choose a template and set the business details shown on bills, PDFs, and WhatsApp shares.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <BillBrandingForm branding={billBranding} />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <StaffList rows={rows} />
