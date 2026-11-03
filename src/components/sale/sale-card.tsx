@@ -57,12 +57,14 @@ export function SaleCard({
   products,
   staff,
   today,
+  canEdit = true,
 }: {
   sale: SaleCardData;
   staffName: string;
   products: SaleProduct[];
   staff: SaleStaff[];
   today: string;
+  canEdit?: boolean;
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
@@ -199,43 +201,49 @@ export function SaleCard({
             <a href={`/bill/${sale.id}`} className="rounded-xl border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5">
               <Receipt className="mr-1 h-3 w-3" /> Generate Bill
             </a>
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-              <Pencil /> Edit
-            </Button>
-            {!confirming ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:bg-destructive/10"
-                onClick={() => setConfirming(true)}
-              >
-                <Trash2 /> Delete
-              </Button>
-            ) : (
-              <span className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-1.5">
-                <span className="text-xs font-medium text-destructive">Delete this sale?</span>
-                <Button variant="destructive" size="sm" onClick={onDelete} disabled={deleting}>
-                  {deleting ? <Loader2 className="animate-spin" /> : null} Yes
+            {canEdit ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil /> Edit
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
-                  No
-                </Button>
-              </span>
-            )}
+                {!confirming ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10"
+                    onClick={() => setConfirming(true)}
+                  >
+                    <Trash2 /> Delete
+                  </Button>
+                ) : (
+                  <span className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-1.5">
+                    <span className="text-xs font-medium text-destructive">Delete this sale?</span>
+                    <Button variant="destructive" size="sm" onClick={onDelete} disabled={deleting}>
+                      {deleting ? <Loader2 className="animate-spin" /> : null} Yes
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+                      No
+                    </Button>
+                  </span>
+                )}
+              </>
+            ) : null}
           </div>
         </div>
       ) : null}
 
       {/* Edit dialog */}
-      <Dialog open={editing} onClose={() => setEditing(false)} title={`Edit: ${sale.customerName}`}>
-        <SaleForm
-          products={products}
-          staff={staff}
-          today={today}
-          sale={toInitial()}
-          onSaved={() => setEditing(false)}
-        />
-      </Dialog>
+      {canEdit ? (
+        <Dialog open={editing} onClose={() => setEditing(false)} title={`Edit: ${sale.customerName}`}>
+          <SaleForm
+            products={products}
+            staff={staff}
+            today={today}
+            sale={toInitial()}
+            onSaved={() => setEditing(false)}
+          />
+        </Dialog>
+      ) : null}
     </div>
   );
 }

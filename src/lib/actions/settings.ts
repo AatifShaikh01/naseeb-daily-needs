@@ -2,10 +2,8 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
 import { db, settings } from "@/db";
-import { getSession } from "./auth";
+import { requireAdmin } from "@/lib/authorization";
 
 export type SettingsActionResult = {
   error?: string;
@@ -29,8 +27,7 @@ async function getSetting(key: string): Promise<string | null> {
 }
 
 export async function getSettingsAction(): Promise<SettingsActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   try {
     const lowStockLimit = (await getSetting("low_stock_limit")) ?? "5";
@@ -52,8 +49,7 @@ export async function updateSettingAction(
   _prev: SettingsActionResult | null,
   formData: FormData,
 ): Promise<SettingsActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const key = String(formData.get("key") ?? "").trim();
   const value = String(formData.get("value") ?? "").trim();

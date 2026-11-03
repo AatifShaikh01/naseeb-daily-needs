@@ -37,6 +37,26 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (session.accountType === "staff" && session.role !== "admin") {
+    const staffAllowed =
+      pathname === "/" ||
+      pathname === "/sale" ||
+      pathname.startsWith("/sales") ||
+      pathname.startsWith("/pending") ||
+      pathname === "/customers" ||
+      pathname.startsWith("/customers/") ||
+      pathname.startsWith("/bill/") ||
+      pathname === "/stock" ||
+      pathname === "/more" ||
+      pathname === "/change-pin";
+    if (!staffAllowed) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 

@@ -12,6 +12,7 @@ import {
   type BillTemplateId,
 } from "@/lib/bill-branding";
 import { getSession } from "@/lib/actions/auth";
+import { requireAdmin } from "@/lib/authorization";
 
 const settingKeys = [
   "business_name",
@@ -61,8 +62,7 @@ export async function updateBillBrandingAction(
   _previous: BillBrandingActionResult | null,
   formData: FormData,
 ): Promise<BillBrandingActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const read = (key: string) => String(formData.get(key) ?? "").trim();
   const businessName = read("businessName");

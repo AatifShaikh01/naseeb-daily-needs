@@ -19,7 +19,13 @@ export default async function SettingsPage({
 }) {
   const { added } = await searchParams;
   const rows = await db
-    .select({ id: staff.id, name: staff.name, isActive: staff.isActive })
+    .select({
+      id: staff.id,
+      name: staff.name,
+      staffId: staff.staffId,
+      phone: staff.phone,
+      isActive: staff.isActive,
+    })
     .from(staff)
     .orderBy(desc(staff.id));
   const billBranding = await getBillBranding();

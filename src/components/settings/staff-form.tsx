@@ -24,6 +24,41 @@ export function StaffForm() {
           className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
+      <div className="space-y-1.5">
+        <label htmlFor="staff-id" className="text-sm font-medium">Staff ID (optional)</label>
+        <input
+          id="staff-id"
+          name="staffId"
+          maxLength={24}
+          placeholder="Auto-generate if left blank"
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor="staff-phone" className="text-sm font-medium">Phone (optional)</label>
+        <input
+          id="staff-phone"
+          name="phone"
+          maxLength={20}
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor="staff-pin" className="text-sm font-medium">Initial PIN</label>
+        <input
+          id="staff-pin"
+          name="pin"
+          type="password"
+          inputMode="numeric"
+          pattern="[0-9]{4,8}"
+          minLength={4}
+          maxLength={8}
+          autoComplete="new-password"
+          required
+          className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm tracking-widest outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <p className="text-xs text-muted-foreground">4–8 digits. Staff will be asked to change it on first login.</p>
+      </div>
 
       {state?.error ? (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">

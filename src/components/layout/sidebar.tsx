@@ -7,7 +7,7 @@ import { SIDEBAR_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 /** Desktop ke liye left sidebar — mobile pe hidden (niche bottom nav). */
-export function Sidebar() {
+export function Sidebar({ isStaff = false }: { isStaff?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -16,7 +16,11 @@ export function Sidebar() {
         Menu
       </p>
       <nav className="flex flex-col gap-1">
-        {SIDEBAR_ITEMS.map((item) => {
+        {SIDEBAR_ITEMS.filter((item) =>
+          isStaff
+            ? ["/", "/stock", "/sale", "/sales", "/pending", "/more"].includes(item.href)
+            : true,
+        ).map((item) => {
           const isActive =
             item.href === "/"
               ? pathname === item.href

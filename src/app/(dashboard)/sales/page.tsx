@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { SaleCard, type SaleCardData } from "@/components/sale/sale-card";
@@ -7,6 +8,8 @@ import { LiveFormSearch } from "@/components/ui/live-form-search";
 import Link from "next/link";
 import { db, payments, products, saleItems, sales, staff, stockIn } from "@/db";
 import { todayIST } from "@/lib/dates";
+import { getSession } from "@/lib/actions/auth";
+import { isAdminSession, isStaffSession } from "@/lib/authorization";
 
 export const metadata = { title: "Sales" };
 
@@ -22,6 +25,9 @@ export default async function SalesPage({
   }>;
 }) {
   const params = await searchParams;
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const canEdit = isAdminSession(session);
 
   /* Staff + products (for name lookups + edit form) */
   const [staffRows, productRows, inRows, soldByProduct] = await Promise.all([
@@ -58,6 +64,10 @@ export default async function SalesPage({
   if (params.staff) conds.push(eq(sales.deliveredBy, Number(params.staff)));
   if (params.status === "paid" || params.status === "pending" || params.status === "partial")
     conds.push(eq(sales.paymentStatus, params.status));
+  if (isStaffSession(session)) {
+    const staffSales = or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid));
+    if (staffSales) conds.push(staffSales);
+  }
 
   const saleRows = await db
     .select({
@@ -197,6 +207,7 @@ export default async function SalesPage({
               products={editProducts}
               staff={editStaff}
               today={todayIST()}
+              canEdit={canEdit}
             />
           ))}
         </div>

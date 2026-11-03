@@ -1,10 +1,13 @@
 import { asc, sql } from "drizzle-orm";
 import { connection } from "next/server";
+import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { SaleForm, type SaleProduct, type SaleStaff } from "@/components/sale/sale-form";
 import { db, products, saleItems, staff, stockIn } from "@/db";
 import { todayIST } from "@/lib/dates";
+import { getSession } from "@/lib/actions/auth";
+import { isStaffSession } from "@/lib/authorization";
 
 export const metadata = { title: "New Sale" };
 
@@ -12,6 +15,8 @@ export default async function SalePage() {
   // Request-time render — today's date ko prerender me theek se compute karne ke liye
   await connection();
   const today = todayIST();
+  const session = await getSession();
+  if (!session) redirect("/login");
 
   const [productRows, staffRows, inRows, soldByProduct] = await Promise.all([
     db.select().from(products).where(sql`${products.isActive}`).orderBy(asc(products.id)),
@@ -41,7 +46,9 @@ export default async function SalePage() {
     stockBalance: (inMap.get(p.id) ?? 0) - (soldMap.get(p.id) ?? 0),
   }));
 
-  const saleStaff: SaleStaff[] = staffRows.map((s) => ({ id: s.id, name: s.name }));
+  const saleStaff: SaleStaff[] = staffRows
+    .filter((member) => !isStaffSession(session) || member.id === session.uid)
+    .map((s) => ({ id: s.id, name: s.name }));
 
   return (
     <>

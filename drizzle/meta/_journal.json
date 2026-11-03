@@ -22,6 +22,20 @@
       "when": 1792092762498,
       "tag": "0002_add-sales-payment-mode",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793703500000,
+      "tag": "0003_speed-indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793703600000,
+      "tag": "0004_staff_accounts_and_payment_attribution",
+      "breakpoints": true
     }
   ]
 }

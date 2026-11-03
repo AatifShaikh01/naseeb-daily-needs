@@ -1,8 +1,11 @@
-import { asc } from "drizzle-orm";
+import { asc, eq, or } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 import { CustomerDirectory, type CustomerSummary } from "@/components/customers/customer-directory";
 import { PageHeader } from "@/components/layout/page-header";
 import { db, sales } from "@/db";
+import { getSession } from "@/lib/actions/auth";
+import { isStaffSession } from "@/lib/authorization";
 
 export const metadata = { title: "Customers" };
 
@@ -15,6 +18,9 @@ function normalizePhone(phone: string | null) {
 }
 
 export default async function CustomersPage() {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
   const rows = await db
     .select({
       id: sales.id,
@@ -25,6 +31,11 @@ export default async function CustomersPage() {
       paidAmount: sales.paidAmount,
     })
     .from(sales)
+    .where(
+      isStaffSession(session)
+        ? or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid))
+        : undefined,
+    )
     .orderBy(asc(sales.saleDate), asc(sales.id));
 
   const grouped = new Map<string, CustomerSummary>();

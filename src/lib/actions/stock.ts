@@ -2,11 +2,9 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
 import { db, stockIn } from "@/db";
 import { todayIST } from "@/lib/dates";
-import { getSession } from "./auth";
+import { requireAdmin } from "@/lib/authorization";
 import { firstError, stockBatchSchema, stockEntrySchema } from "@/lib/validation";
 
 export type ActionResult = { error?: string; ok?: boolean };
@@ -16,8 +14,7 @@ export async function createStockEntriesAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const raw = formData.get("entries");
   let entries: unknown = [];
@@ -56,8 +53,7 @@ export async function updateStockEntryAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Entry not found." };
@@ -82,8 +78,7 @@ export async function updateStockEntryAction(
 }
 
 export async function deleteStockEntryAction(formData: FormData): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Invalid entry." };

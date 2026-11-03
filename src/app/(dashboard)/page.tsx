@@ -1,13 +1,18 @@
-import { IndianRupee, Package, Clock, ShoppingCart } from "lucide-react";
+import { IndianRupee, Package, Clock, ShoppingCart, Banknote, Boxes } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { and, desc, eq, gte, lte, or, sql } from "drizzle-orm";
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SalesOverviewCard } from "@/components/charts/sales-overview";
 import { getTodaySummary, getTodayActivity, getProductStock, getLast7DaysSales, getPrevious7DaysSales, getStaffDelivery, getTopPendingCustomers } from "@/lib/analytics";
 import { todayIST, formatDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/page-header";
+import { getSession } from "@/lib/actions/auth";
+import { isStaffSession } from "@/lib/authorization";
+import { db, payments, sales } from "@/db";
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
@@ -42,6 +47,10 @@ function DashboardSkeleton() {
 async function DashboardContent() {
   // Request-time render — aaj ki date build-time par freeze na ho
   await connection();
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (isStaffSession(session)) return <StaffDashboard staffId={session.uid} staffName={session.name} />;
+
   const today = todayIST();
   const { totalSalesAmount, deliveredBoxes, salesAmount, totalPending } = await getTodaySummary(today);
   const activity = await getTodayActivity(today);
@@ -216,6 +225,111 @@ async function DashboardContent() {
               ))}
             </ul>
           )}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+async function StaffDashboard({ staffId, staffName }: { staffId: number; staffName: string }) {
+  const today = todayIST();
+  const monthStart = `${today.slice(0, 7)}-01`;
+  const scope = or(eq(sales.staffId, staffId), eq(sales.deliveredBy, staffId));
+  const [createdToday, createdThisMonth, pendingRows, collectedToday, collectedMonth, recentSales] =
+    await Promise.all([
+      db
+        .select({
+          count: sql<number>`count(*)`,
+          amount: sql<string>`coalesce(sum(${sales.totalAmount}), 0)`,
+        })
+        .from(sales)
+        .where(and(eq(sales.staffId, staffId), eq(sales.saleDate, today))),
+      db
+        .select({
+          count: sql<number>`count(*)`,
+          amount: sql<string>`coalesce(sum(${sales.totalAmount}), 0)`,
+        })
+        .from(sales)
+        .where(and(eq(sales.staffId, staffId), gte(sales.saleDate, monthStart), lte(sales.saleDate, today))),
+      db
+        .select({
+          amount: sql<string>`coalesce(sum(${sales.totalAmount} - ${sales.paidAmount}), 0)`,
+        })
+        .from(sales)
+        .where(and(scope, sql`${sales.totalAmount} > ${sales.paidAmount}`)),
+      db
+        .select({ amount: sql<string>`coalesce(sum(${payments.amount}), 0)` })
+        .from(payments)
+        .where(and(eq(payments.staffId, staffId), eq(payments.paidOn, today))),
+      db
+        .select({ amount: sql<string>`coalesce(sum(${payments.amount}), 0)` })
+        .from(payments)
+        .where(and(eq(payments.staffId, staffId), gte(payments.paidOn, monthStart), lte(payments.paidOn, today))),
+      db
+        .select({
+          id: sales.id,
+          saleDate: sales.saleDate,
+          customerName: sales.customerName,
+          totalAmount: sales.totalAmount,
+          paidAmount: sales.paidAmount,
+          paymentStatus: sales.paymentStatus,
+        })
+        .from(sales)
+        .where(scope)
+        .orderBy(desc(sales.saleDate), desc(sales.id))
+        .limit(10),
+    ]);
+
+  const cards = [
+    { label: "My sales today", value: `₹${Number(createdToday[0]?.amount ?? 0).toLocaleString("en-IN")}`, detail: `${createdToday[0]?.count ?? 0} bills`, icon: ShoppingCart },
+    { label: "My sales this month", value: `₹${Number(createdThisMonth[0]?.amount ?? 0).toLocaleString("en-IN")}`, detail: `${createdThisMonth[0]?.count ?? 0} bills`, icon: IndianRupee },
+    { label: "Pending on my sales / deliveries", value: `₹${Number(pendingRows[0]?.amount ?? 0).toLocaleString("en-IN")}`, detail: "Related outstanding", icon: Clock },
+    { label: "Collected today", value: `₹${Number(collectedToday[0]?.amount ?? 0).toLocaleString("en-IN")}`, detail: "Payments recorded by you", icon: Banknote },
+    { label: "Collected this month", value: `₹${Number(collectedMonth[0]?.amount ?? 0).toLocaleString("en-IN")}`, detail: "Payments recorded by you", icon: Boxes },
+  ];
+
+  return (
+    <>
+      <PageHeader title={`Welcome, ${staffName}`} description={`Your field sales and collections · ${formatDate(today)}.`} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {cards.map((card) => (
+          <Card key={card.label}>
+            <CardContent className="p-4">
+              <card.icon className="mb-3 h-5 w-5 text-primary" />
+              <p className="text-xs text-muted-foreground">{card.label}</p>
+              <p className="mt-1 truncate text-lg font-bold">{card.value}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{card.detail}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link href="/sale" className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Record a Sale</Link>
+        <Link href="/pending" className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold">My Pending</Link>
+        <Link href="/customers" className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold">My Customers</Link>
+      </div>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Recent related sales</CardTitle>
+          <CardDescription>Your sales and sales assigned to you for delivery.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {recentSales.length ? recentSales.map((sale) => (
+            <Link
+              key={sale.id}
+              href={`/customers/${sale.id}`}
+              className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 hover:bg-muted/40"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium">{sale.customerName}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(sale.saleDate)}</span>
+              </span>
+              <span className="shrink-0 text-right">
+                <span className="block text-sm font-semibold">₹{Number(sale.totalAmount).toLocaleString("en-IN")}</span>
+                <span className="text-xs capitalize text-muted-foreground">{sale.paymentStatus}</span>
+              </span>
+            </Link>
+          )) : <p className="text-sm text-muted-foreground">No related sales yet.</p>}
         </CardContent>
       </Card>
     </>

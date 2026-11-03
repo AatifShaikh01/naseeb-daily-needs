@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { ArrowLeft, CalendarDays, CircleCheck, Clock3, Phone, ReceiptText } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db, payments, products, saleItems, sales, staff } from "@/db";
+import { getSession } from "@/lib/actions/auth";
+import { isStaffSession } from "@/lib/authorization";
 
 export const metadata = { title: "Customer Profile" };
 
@@ -46,16 +48,27 @@ export default async function CustomerProfilePage({
   const { saleId: rawSaleId } = await params;
   const saleId = Number(rawSaleId);
   if (!Number.isSafeInteger(saleId) || saleId <= 0) notFound();
+  const session = await getSession();
+  if (!session) notFound();
 
   const [referenceSale] = await db
     .select({
       customerName: sales.customerName,
       customerPhone: sales.customerPhone,
+      staffId: sales.staffId,
+      deliveredBy: sales.deliveredBy,
     })
     .from(sales)
     .where(eq(sales.id, saleId))
     .limit(1);
   if (!referenceSale) notFound();
+  if (
+    isStaffSession(session) &&
+    referenceSale.staffId !== session.uid &&
+    referenceSale.deliveredBy !== session.uid
+  ) {
+    notFound();
+  }
 
   const customerSales = await db
     .select({
@@ -77,6 +90,9 @@ export default async function CustomerProfilePage({
           sql`regexp_replace(coalesce(${sales.customerPhone}, ''), '[^0-9]', '', 'g')`,
           normalizePhone(referenceSale.customerPhone),
         ),
+        isStaffSession(session)
+          ? or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid))
+          : undefined,
       ),
     )
     .orderBy(asc(sales.saleDate), asc(sales.id));

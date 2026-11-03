@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -8,6 +8,7 @@ import { db, payments, saleItems, sales } from "@/db";
 import { todayIST } from "@/lib/dates";
 import { getSession } from "./auth";
 import { firstError, saleSchema } from "@/lib/validation";
+import { isStaffSession, requireAdmin } from "@/lib/authorization";
 
 export type ActionResult = { error?: string; ok?: boolean };
 
@@ -63,14 +64,15 @@ export async function createSaleAction(
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, paymentMode, note } =
+  const { saleDate, customerName, customerPhone, deliveredBy: inputDeliveredBy, paymentStatus, paidAmount, paymentMode, note } =
     parsed.data;
+  const deliveredBy = isStaffSession(session) ? session.uid : inputDeliveredBy;
   const { totalRounded, paid } = resolveAmounts(items, paymentStatus, Number(paidAmount));
 
   const [row] = await db
     .insert(sales)
     .values({
-      staffId: deliveredBy,
+      staffId: isStaffSession(session) ? session.uid : null,
       saleDate,
       customerName,
       customerPhone,
@@ -99,6 +101,7 @@ export async function createSaleAction(
       paidOn: saleDate,
       mode: paymentMode,
       note: paymentStatus === "paid" ? "Paid in full" : "Part payment",
+      staffId: isStaffSession(session) ? session.uid : null,
     });
   }
 
@@ -115,8 +118,7 @@ export async function updateSaleAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Sale not found." };
@@ -142,7 +144,6 @@ export async function updateSaleAction(
   await db
     .update(sales)
     .set({
-      staffId: deliveredBy,
       saleDate,
       customerName,
       customerPhone,
@@ -197,8 +198,7 @@ export async function updateSaleAction(
 }
 
 export async function deleteSaleAction(formData: FormData): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Sale not found." };
@@ -225,7 +225,14 @@ export async function getCustomerSuggestions(
   const rows = await db
     .selectDistinct({ name: sales.customerName, phone: sales.customerPhone })
     .from(sales)
-    .where(ilike(sales.customerName, `%${q}%`))
+    .where(
+      and(
+        ilike(sales.customerName, `%${q}%`),
+        isStaffSession(session)
+          ? or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid))
+          : undefined,
+      ),
+    )
     .limit(8);
 
   return rows.map((r) => ({ name: r.name, phone: r.phone }));
@@ -250,6 +257,9 @@ export async function getLastRate(
       and(
         sql`lower(trim(${sales.customerName})) = lower(trim(${name}))`,
         eq(saleItems.productId, productId),
+        isStaffSession(session)
+          ? or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid))
+          : undefined,
       ),
     )
     .orderBy(sql`${sales.saleDate} desc, ${sales.id} desc`)

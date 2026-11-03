@@ -38,7 +38,7 @@ export default async function LoginPage({
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
           <ShieldCheck className="h-3.5 w-3.5" />
-          Owner login — username + PIN
+          Admin username or Staff ID + PIN
         </p>
       </div>
     </div>

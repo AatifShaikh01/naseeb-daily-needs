@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Header } from "@/components/layout/header";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { Sidebar } from "@/components/layout/sidebar";
+import { getSession } from "@/lib/actions/auth";
 
 // Note: Header session ke liye cookies() padhta hai,
 // isliye use Suspense me wrap kiya hai taaki cacheComponents
@@ -14,7 +16,10 @@ import { Sidebar } from "@/components/layout/sidebar";
  * App shell: top header + desktop sidebar + mobile bottom nav.
  * Saare app pages isi route group `(dashboard)` ke under aayenge.
  */
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const isStaff = session?.accountType === "staff" && session.role !== "admin";
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <RouteProgress />
@@ -34,7 +39,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <Header />
       </Suspense>
       <div className="flex w-full flex-1">
-        <Sidebar />
+        <Sidebar isStaff={isStaff} />
         <main className="min-w-0 flex-1 px-4 py-6 pb-28 md:px-8 md:pb-10">
           <div className="mx-auto w-full max-w-5xl">
             <Suspense
@@ -55,7 +60,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
-      <BottomNav />
+      <BottomNav isStaff={isStaff} />
     </div>
   );
 }

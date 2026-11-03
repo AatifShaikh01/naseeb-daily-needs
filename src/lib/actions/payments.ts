@@ -8,6 +8,7 @@ import { db, payments, sales } from "@/db";
 import { todayIST } from "@/lib/dates";
 import { customerPaymentSchema, firstError, salePaymentSchema } from "@/lib/validation";
 import { getSession } from "./auth";
+import { isSaleRelatedToStaff, isStaffSession } from "@/lib/authorization";
 
 export type ActionResult = { error?: string; ok?: boolean };
 
@@ -40,10 +41,16 @@ export async function recordSalePaymentAction(
   const { saleId, amount, paidOn, mode } = parsed.data;
 
   const [sale] = await db
-    .select({ totalAmount: sales.totalAmount, paidAmount: sales.paidAmount })
+    .select({
+      totalAmount: sales.totalAmount,
+      paidAmount: sales.paidAmount,
+      staffId: sales.staffId,
+      deliveredBy: sales.deliveredBy,
+    })
     .from(sales)
     .where(eq(sales.id, saleId));
   if (!sale) return { error: "Sale not found." };
+  if (!isSaleRelatedToStaff(sale, session)) return { error: "You can only collect payments for your related sales." };
 
   const total = Number(sale.totalAmount);
   const cur = Number(sale.paidAmount);
@@ -51,7 +58,13 @@ export async function recordSalePaymentAction(
 
   await db
     .insert(payments)
-    .values({ saleId, amount: amount.toFixed(2), paidOn, mode });
+    .values({
+      saleId,
+      amount: amount.toFixed(2),
+      paidOn,
+      mode,
+      staffId: isStaffSession(session) ? session.uid : null,
+    });
   await db
     .update(sales)
     .set({ paidAmount: newPaid.toFixed(2), paymentStatus: statusFor(newPaid, total) })
@@ -92,6 +105,8 @@ export async function recordCustomerPaymentAction(
       saleDate: sales.saleDate,
       customerName: sales.customerName,
       customerPhone: sales.customerPhone,
+      staffId: sales.staffId,
+      deliveredBy: sales.deliveredBy,
       totalAmount: sales.totalAmount,
       paidAmount: sales.paidAmount,
     })
@@ -100,6 +115,7 @@ export async function recordCustomerPaymentAction(
   const tp = normPhone(customerPhone);
   const mine = all
     .filter((s) => normName(s.customerName) === tn && normPhone(s.customerPhone) === tp)
+    .filter((s) => isSaleRelatedToStaff(s, session))
     .sort((a, b) => (a.saleDate < b.saleDate ? -1 : a.saleDate > b.saleDate ? 1 : a.id - b.id));
 
   if (mine.length === 0) return { error: "No sales found for this customer." };
@@ -117,7 +133,14 @@ export async function recordCustomerPaymentAction(
     const newPaid = Math.round((cur + applied) * 100) / 100;
     await db
       .insert(payments)
-      .values({ saleId: s.id, amount: applied.toFixed(2), paidOn, mode, note: note ?? "" });
+      .values({
+        saleId: s.id,
+        amount: applied.toFixed(2),
+        paidOn,
+        mode,
+        note: note ?? "",
+        staffId: isStaffSession(session) ? session.uid : null,
+      });
     await db
       .update(sales)
       .set({ paidAmount: newPaid.toFixed(2), paymentStatus: statusFor(newPaid, total) })
@@ -132,7 +155,14 @@ export async function recordCustomerPaymentAction(
     const newPaid = Math.round((cur + remaining) * 100) / 100;
     await db
       .insert(payments)
-      .values({ saleId: last.id, amount: remaining.toFixed(2), paidOn, mode, note: (note ? note + " " : "") + "(advance)" });
+      .values({
+        saleId: last.id,
+        amount: remaining.toFixed(2),
+        paidOn,
+        mode,
+        note: (note ? note + " " : "") + "(advance)",
+        staffId: isStaffSession(session) ? session.uid : null,
+      });
     await db
       .update(sales)
       .set({ paidAmount: newPaid.toFixed(2), paymentStatus: statusFor(newPaid, Number(last.totalAmount)) })

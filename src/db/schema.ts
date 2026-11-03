@@ -46,14 +46,15 @@ export const users = pgTable(
   (t) => [uniqueIndex("users_username_unique").on(t.username)],
 );
 
-/* Staff — ab login support ke saath (staff ID + PIN se login kar sakte hain) */
+/* Staff — login support ke saath (staff ID + PIN se login kar sakte hain) */
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  staffId: text("staff_id").notNull().unique(),
+  staffId: text("staff_id").notNull(),
   phone: text("phone"),
   pinHash: text("pin_hash"),
   role: staffRoleEnum("role").notNull().default("staff"),
+  mustChangePin: boolean("must_change_pin").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -147,7 +148,6 @@ export const sales = pgTable(
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone"),
     staffId: integer("staff_id")
-      .notNull()
       .references(() => staff.id),
     deliveredBy: integer("delivered_by")
       .notNull()
@@ -191,6 +191,7 @@ export const payments = pgTable("payments", {
   paidOn: date("paid_on").notNull().default(sql`current_date`),
   mode: paymentModeEnum("mode").notNull().default("cash"),
   note: text("note").notNull().default(""),
+  staffId: integer("staff_id").references(() => staff.id),
 });
 
 /* Suppliers — maal khareedne wale (udhaar ledger ke liye) */
@@ -272,4 +273,3 @@ export type SupplierPayment = typeof supplierPayments.$inferSelect;
 export type Customer = typeof customers.$inferSelect;
 export type CustomerPayment = typeof customerPayments.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
-

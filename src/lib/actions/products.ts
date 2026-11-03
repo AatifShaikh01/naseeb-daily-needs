@@ -2,11 +2,9 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
 import { db, products } from "@/db";
 import { firstError, productSchema } from "@/lib/validation";
-import { getSession } from "./auth";
+import { requireAdmin } from "@/lib/authorization";
 
 export type ActionResult = { error?: string; ok?: boolean };
 
@@ -15,8 +13,7 @@ export async function saveProductAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   const parsed = productSchema.safeParse({
@@ -50,8 +47,7 @@ export async function saveProductAction(
 }
 
 export async function deleteProductAction(formData: FormData): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Invalid product." };

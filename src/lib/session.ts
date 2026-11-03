@@ -8,6 +8,7 @@ export type SessionUser = {
   username: string;
   name: string;
   role: string;
+  accountType?: "owner" | "staff";
   mustChangePin: boolean;
 };
 
@@ -26,6 +27,7 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     username: user.username,
     name: user.name,
     role: user.role,
+    accountType: user.accountType,
     mcp: user.mustChangePin,
   })
     .setProtectedHeader({ alg: "HS256" })
@@ -46,6 +48,7 @@ export async function verifySessionToken(
       username: String(payload.username ?? ""),
       name: String(payload.name ?? ""),
       role: String(payload.role ?? "staff"),
+      accountType: payload.accountType === "staff" || payload.role !== "owner" ? "staff" : "owner",
       mustChangePin: Boolean(payload.mcp),
     };
   } catch {

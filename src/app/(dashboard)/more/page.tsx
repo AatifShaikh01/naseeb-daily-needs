@@ -5,6 +5,7 @@ import { logoutAction } from "@/lib/actions/auth";
 import { ComingSoonCard, PageHeader } from "@/components/layout/page-header";
 import { PwaInstallButton } from "@/components/pwa/pwa-install-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSession } from "@/lib/actions/auth";
 
 export const metadata = { title: "More" };
 
@@ -60,12 +61,17 @@ const MORE_LINKS = [
 ] as const;
 
 export default async function MorePage() {
+  const session = await getSession();
+  const isStaff = session?.accountType === "staff" && session.role !== "admin";
+  const links = MORE_LINKS.filter((link) =>
+    isStaff ? ["/sales", "/customers", "/change-pin"].includes(link.href) : true,
+  );
   return (
     <>
-      <PageHeader title="More" description="Products, settings and logout." />
+      <PageHeader title="More" description={isStaff ? "Customer and sales tools." : "Products, settings and logout."} />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
-        {MORE_LINKS.map((link) => (
+        {links.map((link) => (
           <Link key={link.title} href={link.href}>
             <Card className="transition-shadow hover:shadow-float">
               <CardHeader className="flex-row items-center gap-3 pb-2">

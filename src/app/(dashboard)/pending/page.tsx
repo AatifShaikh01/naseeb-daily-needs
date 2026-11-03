@@ -1,9 +1,12 @@
-import { asc, sql } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { PendingView } from "@/components/pending/pending-view";
 import { db, payments, products, saleItems, sales, staff } from "@/db";
 import { todayIST } from "@/lib/dates";
+import { getSession } from "@/lib/actions/auth";
+import { isStaffSession } from "@/lib/authorization";
 
 export const metadata = { title: "Pending" };
 // DB-backed live page — build time pe prerender mat karo (data hamesha fresh chahiye).
@@ -41,6 +44,8 @@ type CustomerGroup = {
 };
 
 export default async function PendingPage() {
+  const session = await getSession();
+  if (!session) redirect("/login");
   // Pehle sirf udhaar wali sales nikalo (paid wali ka data hi mat kheecho).
   // totalAmount/paidAmount numeric hain — DB me hi pending filter karo.
   const pendingSaleRows = await db
@@ -54,7 +59,14 @@ export default async function PendingPage() {
       paidAmount: sales.paidAmount,
     })
     .from(sales)
-    .where(sql`(${sales.totalAmount} - ${sales.paidAmount}) > 0.005`)
+    .where(
+      and(
+        sql`(${sales.totalAmount} - ${sales.paidAmount}) > 0.005`,
+        isStaffSession(session)
+          ? or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid))
+          : undefined,
+      ),
+    )
     .orderBy(asc(sales.saleDate), asc(sales.id));
 
   const pendingIds = pendingSaleRows.map((s) => s.id);

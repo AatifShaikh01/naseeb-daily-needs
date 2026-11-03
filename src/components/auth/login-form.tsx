@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
+import { useState } from "react";
 import { Loader2, Lock, User } from "lucide-react";
 
 import { loginAction, type ActionResult } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 
 export function LoginForm({ next }: { next: string }) {
+  const [role, setRole] = useState<"owner" | "staff">("owner");
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
     loginAction,
     null,
@@ -15,10 +17,27 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="role" value={role} />
+
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+        {(["owner", "staff"] as const).map((loginRole) => (
+          <button
+            key={loginRole}
+            type="button"
+            onClick={() => setRole(loginRole)}
+            className={`rounded-lg px-3 py-2 text-sm font-medium capitalize transition-colors ${
+              role === loginRole ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+            aria-pressed={role === loginRole}
+          >
+            {loginRole === "owner" ? "Admin" : "Staff"}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-1.5">
         <label htmlFor="username" className="text-sm font-medium">
-          Username
+          {role === "staff" ? "Staff ID" : "Username"}
         </label>
         <div className="relative">
           <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -29,7 +48,7 @@ export function LoginForm({ next }: { next: string }) {
             autoCapitalize="none"
             autoCorrect="off"
             required
-            placeholder="aasif"
+            placeholder={role === "staff" ? "e.g. STF0001" : "Admin username"}
             className="h-11 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>

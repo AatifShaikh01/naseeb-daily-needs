@@ -2,12 +2,11 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { db, purchases, purchaseItems, stockIn, supplierPayments, suppliers } from "@/db";
 import { todayIST } from "@/lib/dates";
-import { getSession } from "./auth";
 import { firstError, purchaseSchema, supplierPaymentSchema, supplierSchema } from "@/lib/validation";
+import { requireAdmin } from "@/lib/authorization";
 
 export type ActionResult = { error?: string; ok?: boolean };
 
@@ -16,8 +15,7 @@ export async function createSupplierAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const parsed = supplierSchema.safeParse({
     name: formData.get("name"),
@@ -51,8 +49,7 @@ export async function createPurchaseAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const items = parseItems(formData.get("items"));
   const parsed = purchaseSchema.safeParse({
@@ -141,8 +138,7 @@ export async function updatePurchaseAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Purchase not found." };
@@ -244,8 +240,7 @@ export async function updatePurchaseAction(
 
 /** Purchase delete — items, stock-in, payments, then the purchase itself. */
 export async function deletePurchaseAction(formData: FormData): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const id = Number(formData.get("id") ?? 0);
   if (!id) return { error: "Purchase not found." };
@@ -266,8 +261,7 @@ export async function recordSupplierPaymentAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireAdmin();
 
   const parsed = supplierPaymentSchema.safeParse({
     supplierId: formData.get("supplierId"),

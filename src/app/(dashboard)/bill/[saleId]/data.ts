@@ -7,6 +7,7 @@ import { getSession } from "@/lib/actions/auth";
 import { getBillBranding } from "@/lib/actions/bill-branding";
 import { redirect } from "next/navigation";
 import type { BillBranding } from "@/lib/bill-branding";
+import { isSaleRelatedToStaff } from "@/lib/authorization";
 
 type BillItem = {
   productName: string;
@@ -38,6 +39,8 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
   const [sale] = await db
     .select({
       id: sales.id,
+      staffId: sales.staffId,
+      deliveredBy: sales.deliveredBy,
       saleDate: sales.saleDate,
       customerName: sales.customerName,
       customerPhone: sales.customerPhone,
@@ -49,6 +52,7 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
     .from(sales)
     .where(eq(sales.id, saleId));
   if (!sale) return null;
+  if (!isSaleRelatedToStaff(sale, session)) return null;
 
   const [items, paymentRows, branding] = await Promise.all([
     db
