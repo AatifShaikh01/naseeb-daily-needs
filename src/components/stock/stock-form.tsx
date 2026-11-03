@@ -66,12 +66,7 @@ export function StockForm({
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Products ({rows.length})</p>
-          <Button type="button" variant="outline" size="sm" onClick={addRow}>
-            <Plus /> Add another product
-          </Button>
-        </div>
+        <p className="text-sm font-medium">Products ({rows.length})</p>
 
         {rows.map((row, i) => (
           <div key={row.key} className="flex flex-wrap items-end gap-x-2 gap-y-2 rounded-xl border border-border bg-card p-3">
@@ -119,6 +114,12 @@ export function StockForm({
       <div className="space-y-1.5">
         <label htmlFor="note" className="text-sm font-medium">Note (optional)</label>
         <input id="note" name="note" placeholder="e.g. Truck no, invoice" className={inputCls} />
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="button" variant="outline" size="sm" onClick={addRow}>
+          <Plus /> Add another product
+        </Button>
       </div>
 
       <Button type="submit" disabled={pending} className="w-full" size="lg">
