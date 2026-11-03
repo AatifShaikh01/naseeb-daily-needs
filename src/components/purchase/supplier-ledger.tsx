@@ -20,7 +20,7 @@ function fmtDate(d: string) {
   return new Date(y, m - 1, day).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPayments, editingId, setEditingId }: { suppliers: { id: number; name: string; phone: string | null }[]; purchases: { id: number; supplierId: number; entryDate: string; direction: "in" | "return"; totalAmount: string; paidAmount: string; note: string | null }[]; purchaseItems: { purchaseId: number; productId: number; productName: string; size: string; boxes: number; ratePerBox: string }[]; supplierPayments: { id: number; supplierId: number; amount: string; paidOn: string; mode: string; note: string | null }[]; editingId: number | null; setEditingId: Dispatch<SetStateAction<number | null>>; }) {
+export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPayments, editingId, setEditingId }: { suppliers: { id: number; name: string; phone: string | null }[]; purchases: { id: number; supplierId: number; entryDate: string; direction: "in" | "return"; totalAmount: string; paidAmount: string; note: string | null }[]; purchaseItems: { purchaseId: number; productId: number; productName: string; size: string; boxes: number; ratePerBox: string }[]; supplierPayments: { id: number; supplierId: number; purchaseId: number | null; amount: string; paidOn: string; mode: string; note: string | null }[]; editingId: number | null; setEditingId: Dispatch<SetStateAction<number | null>>; }) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [query, setQuery] = useState("");
@@ -32,7 +32,7 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
     else { totMap.set(p.supplierId, { total: p.totalAmount, paid: p.paidAmount }); }
   }
 
-  const payMap = new Map<number, { id: number; supplierId: number; amount: string; paidOn: string; mode: string; note: string | null }[]>();
+  const payMap = new Map<number, { id: number; supplierId: number; purchaseId: number | null; amount: string; paidOn: string; mode: string; note: string | null }[]>();
   for (const p of supplierPayments) { const a = payMap.get(p.supplierId) || []; a.push(p); payMap.set(p.supplierId, a); }
 
   const purchMap = new Map<number, { id: number; supplierId: number; entryDate: string; direction: "in" | "return"; totalAmount: string; paidAmount: string; note: string | null }[]>();
@@ -120,6 +120,7 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                   <ul className="divide-y divide-border/60">
                     {purchMap.get(s.id)?.length ? purchMap.get(s.id)!.map((p) => {
                       const its = itemMap.get(p.id) || [];
+                      const purchasePayments = pays.filter((payment) => payment.purchaseId === p.id);
                       const bal = round2(Number(p.totalAmount) - Number(p.paidAmount));
                       const isEditing = editingId === p.id;
                       const isDeleting = deletingId === p.id;
@@ -163,10 +164,28 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                                 {bal > 0 ? <span className="font-semibold text-destructive">Due {inr(bal)}</span> : bal < 0 ? <span className="font-semibold text-primary">Advance {inr(Math.abs(bal))}</span> : <span className="text-primary">Clear</span>}
                                 {p.note ? <span className="text-muted-foreground">· {p.note}</span> : null}
                               </div>
+                              {purchasePayments.length > 0 ? (
+                                <div className="mt-2 rounded-lg bg-muted/40 p-2">
+                                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Payments for this purchase
+                                  </p>
+                                  <ul className="space-y-1 text-xs">
+                                    {purchasePayments.map((payment) => (
+                                      <li key={payment.id} className="flex flex-wrap justify-between gap-x-3">
+                                        <span className="text-muted-foreground">
+                                          {fmtDate(payment.paidOn)} · {payment.mode}
+                                          {pn(payment.note)}
+                                        </span>
+                                        <span className="font-semibold">{inr(Number(payment.amount))}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5">
                               <Button variant="outline" size="sm" disabled={isDeleting} onClick={() => setEditingId(isEditing ? null : p.id)} className="text-xs">{isEditing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Pencil className="h-3 w-3 mr-1" />}{isEditing ? "Editing…" : "Edit"}</Button>
-                              <SharePurchaseButton purchase={{ id: p.id, entryDate: p.entryDate, supplierName: s.name, direction: p.direction, paymentStatus: ps(p.totalAmount, p.paidAmount), totalAmount: Math.abs(Number(p.totalAmount)), paidAmount: Math.abs(Number(p.paidAmount)), items: its.map(it => ({ productName: it.productName, size: it.size, boxes: Math.abs(it.boxes), ratePerBox: Number(it.ratePerBox) })) }} />
+                              <SharePurchaseButton purchase={{ id: p.id, entryDate: p.entryDate, supplierName: s.name, direction: p.direction, paymentStatus: ps(p.totalAmount, p.paidAmount), totalAmount: Math.abs(Number(p.totalAmount)), paidAmount: Math.abs(Number(p.paidAmount)), payments: purchasePayments.map(payment => ({ amount: Number(payment.amount), paidOn: payment.paidOn, mode: payment.mode, note: payment.note ?? "" })), items: its.map(it => ({ productName: it.productName, size: it.size, boxes: Math.abs(it.boxes), ratePerBox: Number(it.ratePerBox) })) }} />
                               {!confirmingDelete ? <Button variant="destructive" size="sm" disabled={isDeleting} onClick={() => { setDeletingId(p.id); setConfirmingDelete(true); }} className="text-xs">{isDeleting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}Delete</Button> : <span className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-1.5"><span className="text-xs font-medium text-destructive">Delete this purchase?</span><Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)} disabled={isDeleting}>{isDeleting ? <Loader2 className="animate-spin" /> : null} Yes</Button><Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>No</Button></span>}
                             </div>
                           </div>
@@ -176,7 +195,10 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                   </ul>
 
                   <div>
-                    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Payments</h4>
+                    <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">All supplier payments</h4>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      Payments are shown by date; one payment may be split across multiple purchase dues.
+                    </p>
                     {pays.length ? <ul className="divide-y divide-border/60 text-sm">{pays.map((p) => <li key={p.id} className="flex justify-between py-1.5"><span className="text-muted-foreground">{fmtDate(p.paidOn)} · {p.mode}{pn(p.note)}</span><span className="font-semibold">{inr(Number(p.amount))}</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No payments yet.</p>}
                   </div>
                 </div>

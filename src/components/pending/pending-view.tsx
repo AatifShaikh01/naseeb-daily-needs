@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ChevronDown,
   ChevronUp,
@@ -248,6 +249,9 @@ export function PendingView({
 
             {open ? (
               <div className="space-y-3 border-t border-border p-4">
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={`/customers/${c.sales[0].id}`}>View complete customer profile</Link>
+                </Button>
                 <div className="flex flex-col gap-2 min-[420px]:flex-row">
                   <Button className="flex-1" onClick={() => setPayTarget({ kind: "customer", customer: c })}>
                     <Wallet /> Receive Payment

@@ -39,7 +39,7 @@ export default async function BillPage({
 
     <div data-bill-sheet className="max-w-[700px] mx-auto p-6 sm:p-10 bg-white">
 
-      <PrintButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items }} />
+      <PrintButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments }} />
 
       <div id="bill">
 
@@ -273,6 +273,34 @@ export default async function BillPage({
 
         </table>
 
+        <div className="mb-6">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Payment History
+          </h2>
+          {bill.payments.length ? (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/60 text-left text-xs text-muted-foreground">
+                  <th className="py-2 pr-2 font-medium">Date</th>
+                  <th className="py-2 pr-2 font-medium">Mode</th>
+                  <th className="py-2 text-right font-medium">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bill.payments.map((payment) => (
+                  <tr key={payment.id} className="border-b border-border/40">
+                    <td className="py-2 pr-2">{formatDate(payment.paidOn)}</td>
+                    <td className="py-2 pr-2 capitalize">{payment.mode}</td>
+                    <td className="py-2 text-right font-medium">{money(payment.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-muted-foreground">No payment entries recorded.</p>
+          )}
+        </div>
+
 
 
         <p className="text-center text-xs text-muted-foreground mt-8">
@@ -285,7 +313,7 @@ export default async function BillPage({
 
       </div>
 
-      <ShareBillButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items }} />
+      <ShareBillButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments }} />
 
 
 
@@ -300,5 +328,4 @@ export default async function BillPage({
   );
 
 }
-
 

@@ -28,6 +28,7 @@ type PurchaseItemRow = {
 type PaymentRow = {
   id: number;
   supplierId: number;
+  purchaseId: number | null;
   amount: string;
   paidOn: string;
   mode: string;

@@ -39,6 +39,7 @@ export default async function PurchasesPage() {
       .select({
         id: supplierPayments.id,
         supplierId: supplierPayments.supplierId,
+        purchaseId: supplierPayments.purchaseId,
         amount: supplierPayments.amount,
         paidOn: supplierPayments.paidOn,
         mode: supplierPayments.mode,

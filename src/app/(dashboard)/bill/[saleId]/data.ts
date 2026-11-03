@@ -2,7 +2,7 @@
 
 import { asc, eq, inArray } from "drizzle-orm";
 
-import { db, products, saleItems, sales } from "@/db";
+import { db, payments, products, saleItems, sales } from "@/db";
 import { getSession } from "@/lib/actions/auth";
 import { redirect } from "next/navigation";
 
@@ -24,6 +24,7 @@ type BillData = {
   paymentStatus: string;
   paymentMode: string;
   items: BillItem[];
+  payments: { id: number; amount: number; paidOn: string; mode: string; note: string }[];
 };
 
 /** Fetch one sale with items for the bill. */
@@ -46,7 +47,8 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
     .where(eq(sales.id, saleId));
   if (!sale) return null;
 
-  const items = await db
+  const [items, paymentRows] = await Promise.all([
+    db
     .select({
       productId: saleItems.productId,
       boxes: saleItems.boxes,
@@ -54,7 +56,19 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
     })
     .from(saleItems)
     .where(eq(saleItems.saleId, saleId))
-    .orderBy(asc(saleItems.id));
+    .orderBy(asc(saleItems.id)),
+    db
+      .select({
+        id: payments.id,
+        amount: payments.amount,
+        paidOn: payments.paidOn,
+        mode: payments.mode,
+        note: payments.note,
+      })
+      .from(payments)
+      .where(eq(payments.saleId, saleId))
+      .orderBy(asc(payments.paidOn), asc(payments.id)),
+  ]);
 
   const productIds = items.map((i) => i.productId);
   let productMap = new Map<number, { name: string; size: string }>();
@@ -89,5 +103,9 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
     paymentStatus: sale.paymentStatus,
     paymentMode: sale.paymentMode,
     items: billItems,
+    payments: paymentRows.map((payment) => ({
+      ...payment,
+      amount: Number(payment.amount),
+    })),
   };
 }

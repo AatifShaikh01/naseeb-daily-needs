@@ -14,6 +14,7 @@ type BillPageProps = {
   totalAmount: number;
   paidAmount: number;
   items: { productName: string; productSize: string; boxes: number; ratePerBox: number; amount: number }[];
+  payments: { id: number; amount: number; paidOn: string; mode: string; note: string }[];
 };
 
 async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
@@ -148,8 +149,38 @@ async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
       tot("Paid", inr(bill.paidAmount), y + 19, emerald);
       tot("Pending", inr(pending), y + 38, red);
 
+      y += 58;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(dark[0], dark[1], dark[2]);
+      doc.text("PAYMENT HISTORY", M, y);
+      if (bill.payments.length) {
+        autoTable(doc, {
+          startY: y + 6,
+          head: [["DATE", "MODE", "AMOUNT (Rs.)", "NOTE"]],
+          body: bill.payments.map((payment) => [
+            payment.paidOn,
+            payment.mode,
+            inr(payment.amount),
+            payment.note,
+          ]),
+          styles: { font: "helvetica", fontSize: 9.5, cellPadding: 5, textColor: [30, 30, 30] },
+          headStyles: { fillColor: [255, 255, 255], textColor: [120, 120, 120], fontSize: 8.5 },
+          bodyStyles: { lineWidth: { bottom: 0.5 }, lineColor: [235, 235, 235] },
+          columnStyles: { 2: { halign: "right" } },
+          margin: { left: M, right: M },
+        });
+        y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(grey[0], grey[1], grey[2]);
+        doc.text("No payment entries recorded.", M, y + 16);
+        y += 40;
+      }
+
       // Footer — centered thank-you + shop line
-      y += 78;
+      y += 18;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(grey[0], grey[1], grey[2]);
@@ -221,12 +252,20 @@ export function ShareBillButton({ bill }: { bill: BillPageProps }) {
       setBusy(true);
       const blob = await buildPdfBlob(bill);
       const file = new File([blob], pdfFileName, { type: "application/pdf" });
+      const paymentLines = bill.payments.map(
+        (payment) => `${payment.paidOn} · ${money(payment.amount)} · ${payment.mode}`,
+      );
+      const shareText = [
+        `Bill ${billNo} - ${bill.customerName} - Total ${money(bill.totalAmount)}`,
+        "Payments:",
+        ...(paymentLines.length ? paymentLines : ["No payment entries recorded"]),
+      ].join("\n");
       // Mobile: system share sheet - WhatsApp select karo, PDF attached jayegi
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: `Bill ${billNo} - Naseeb Daily Needs`,
-          text: `Bill ${billNo} - ${bill.customerName} - Total ${money(bill.totalAmount)}`,
+          text: shareText,
         });
         return;
       }
@@ -234,7 +273,7 @@ export function ShareBillButton({ bill }: { bill: BillPageProps }) {
       saveBlob(blob, pdfFileName);
       const phone = (bill.customerPhone || "").replace(/\D/g, "");
       const msg = encodeURIComponent(
-        `Bill ${billNo} - Naseeb Daily Needs & Agencies\nCustomer: ${bill.customerName}\nTotal: ${money(pending)} pending (Total ${money(bill.totalAmount)}, Paid ${money(bill.paidAmount)})\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
+        `Bill ${billNo} - Naseeb Daily Needs & Agencies\nCustomer: ${bill.customerName}\nTotal: ${money(pending)} pending (Total ${money(bill.totalAmount)}, Paid ${money(bill.paidAmount)})\nPayment history:\n${paymentLines.length ? paymentLines.join("\n") : "No payment entries recorded"}\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
       );
       window.open(`https://wa.me/${phone ? `91${phone.slice(-10)}` : ""}?text=${msg}`, "_blank");
     } finally {

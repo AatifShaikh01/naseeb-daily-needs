@@ -306,26 +306,32 @@ export async function recordSupplierPaymentAction(
     return { error: `Amount exceeds total pending dues of ₹${totalPending.toLocaleString("en-IN")}` };
   }
 
+  const allocations: { purchaseId: number; amount: number }[] = [];
   for (const p of pendingRows) {
     if (left <= 0) break;
     const due = Math.round((Number(p.total) - Number(p.paid)) * 100) / 100;
     if (due <= 0) continue;
     const use = Math.min(due, left);
     left = Math.round((left - use) * 100) / 100;
+    allocations.push({ purchaseId: p.id, amount: use });
     await db
       .update(purchases)
       .set({ paidAmount: (Math.round((Number(p.paid) + use) * 100) / 100).toFixed(2) })
       .where(eq(purchases.id, p.id));
   }
 
-  const applied = Math.round((amount - left) * 100) / 100;
-  await db.insert(supplierPayments).values({
-    supplierId,
-    amount: applied.toFixed(2),
-    paidOn,
-    mode,
-    note: note ?? "",
-  });
+  if (allocations.length > 0) {
+    await db.insert(supplierPayments).values(
+      allocations.map((allocation) => ({
+        purchaseId: allocation.purchaseId,
+        supplierId,
+        amount: allocation.amount.toFixed(2),
+        paidOn,
+        mode,
+        note: note ?? "",
+      })),
+    );
+  }
 
   revalidatePath("/purchases");
   return { ok: true };

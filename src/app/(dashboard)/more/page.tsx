@@ -1,4 +1,4 @@
-import { FileText, KeyRound, Landmark, MoreHorizontal, Package, PackagePlus, Receipt, Settings } from "lucide-react";
+import { ContactRound, FileText, KeyRound, Landmark, MoreHorizontal, Package, PackagePlus, Receipt, Settings } from "lucide-react";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/auth";
@@ -26,6 +26,12 @@ const MORE_LINKS = [
     title: "Sales",
     href: "/sales",
     description: "View, filter and edit all recorded sales.",
+  },
+  {
+    icon: ContactRound,
+    title: "Customers",
+    href: "/customers",
+    description: "Customer profiles with complete sales and payment history.",
   },
   {
     icon: FileText,

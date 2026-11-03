@@ -12,6 +12,7 @@ type PurchaseShareData = {
   paymentStatus: "paid" | "pending" | "partial";
   totalAmount: number;
   paidAmount: number;
+  payments: { amount: number; paidOn: string; mode: string; note: string }[];
   items: { productName: string; size: string; boxes: number; ratePerBox: number }[];
 };
 
@@ -147,6 +148,35 @@ async function buildPdfBlob(purchase: PurchaseShareData): Promise<Blob> {
   y += 18;
   tot("Due:", money(due), y, true, due > 0 ? [190, 30, 30] : green);
 
+  y += 28;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(dark[0], dark[1], dark[2]);
+  doc.text("PAYMENT HISTORY", M, y);
+  if (purchase.payments.length) {
+    autoTable(doc, {
+      startY: y + 6,
+      head: [["DATE", "MODE", "AMOUNT (Rs.)", "NOTE"]],
+      body: purchase.payments.map((payment) => [
+        payment.paidOn,
+        payment.mode,
+        money(payment.amount),
+        payment.note,
+      ]),
+      styles: { fontSize: 9.5, cellPadding: 5, textColor: dark },
+      headStyles: { fillColor: green, textColor: [255, 255, 255], fontStyle: "bold" },
+      columnStyles: { 2: { halign: "right" } },
+      margin: { left: M, right: M },
+    });
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+  } else {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(grey[0], grey[1], grey[2]);
+    doc.text("No purchase-specific payment entries recorded.", M, y + 16);
+    y += 40;
+  }
+
   y += 30;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -174,13 +204,21 @@ export function SharePurchaseButton({ purchase }: { purchase: PurchaseShareData 
     try {
       const blob = await buildPdfBlob(purchase);
       const file = new File([blob], pdfFileName, { type: "application/pdf" });
+      const paymentLines = purchase.payments.map(
+        (payment) => `${payment.paidOn} · ${money(payment.amount)} · ${payment.mode}${payment.note ? ` · ${payment.note}` : ""}`,
+      );
+      const shareText = [
+        `Purchase PUR-${String(purchase.id).padStart(4, "0")} - ${purchase.supplierName} - Total ${money(Math.abs(purchase.totalAmount))}`,
+        "Purchase-specific payments:",
+        ...(paymentLines.length ? paymentLines : ["No purchase-specific payment entries recorded"]),
+      ].join("\n");
       // Mobile: system share sheet — WhatsApp select karo, PDF attached jayegi
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
             title: `Purchase PUR-${String(purchase.id).padStart(4, "0")} - Naseeb Daily Needs`,
-            text: `Purchase - ${purchase.supplierName} - Total ${money(Math.abs(purchase.totalAmount))}`,
+            text: shareText,
           });
           return;
         } catch {
@@ -192,7 +230,7 @@ export function SharePurchaseButton({ purchase }: { purchase: PurchaseShareData 
       const total = Math.abs(purchase.totalAmount);
       const paid = Math.abs(purchase.paidAmount);
       const msg = encodeURIComponent(
-        `Purchase PUR-${String(purchase.id).padStart(4, "0")} - Naseeb Daily Needs\nSupplier: ${purchase.supplierName}\nTotal: ${money(total)}, Paid: ${money(paid)}, Due: ${money(Math.round((total - paid) * 100) / 100)}\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
+        `Purchase PUR-${String(purchase.id).padStart(4, "0")} - Naseeb Daily Needs\nSupplier: ${purchase.supplierName}\nTotal: ${money(total)}, Paid: ${money(paid)}, Due: ${money(Math.round((total - paid) * 100) / 100)}\nPurchase-specific payment history:\n${paymentLines.length ? paymentLines.join("\n") : "No purchase-specific payment entries recorded"}\nPDF abhi download ho gayi hai - yahi attach karke bhej raha hoon.`
       );
       window.open(`https://wa.me/?text=${msg}`, "_blank");
     } finally {
