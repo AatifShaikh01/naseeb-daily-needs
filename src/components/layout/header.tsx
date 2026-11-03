@@ -18,10 +18,10 @@ export async function Header() {
           <Logo height={44} className="shrink-0" />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-lg font-extrabold tracking-wide text-foreground sm:text-xl">
-              NASEEB
+              CODRENIX
             </p>
             <p className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[13px]">
-              Daily Needs &amp; Agencies
+              Agency ERP
             </p>
           </div>
         </div>
