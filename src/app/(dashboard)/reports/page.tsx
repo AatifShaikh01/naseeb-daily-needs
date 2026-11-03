@@ -78,7 +78,7 @@ export default async function ReportsPage({
           <p className="text-sm text-muted-foreground">Daily and monthly overview with CSV export.</p>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-6">
           {/* Daily Report Section */}
           <div id="daily-section" className="min-w-0">
             

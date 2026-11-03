@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { deletePurchaseAction } from "@/lib/actions/purchases";
 import { SharePurchaseButton } from "./share-purchase-button";
 import { SupplierPayDialog } from "./supplier-pay-dialog";
+import { LiveSearch } from "@/components/ui/live-search";
 
 const inr = (n: number) => "\u20B9" + n.toLocaleString("en-IN");
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -22,6 +23,7 @@ function fmtDate(d: string) {
 export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPayments, editingId, setEditingId }: { suppliers: { id: number; name: string; phone: string | null }[]; purchases: { id: number; supplierId: number; entryDate: string; direction: "in" | "return"; totalAmount: string; paidAmount: string; note: string | null }[]; purchaseItems: { purchaseId: number; productId: number; productName: string; size: string; boxes: number; ratePerBox: string }[]; supplierPayments: { id: number; supplierId: number; amount: string; paidOn: string; mode: string; note: string | null }[]; editingId: number | null; setEditingId: Dispatch<SetStateAction<number | null>>; }) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [query, setQuery] = useState("");
 
   const totMap = new Map<number, { total: string; paid: string }>();
   for (const p of purchases) {
@@ -38,6 +40,23 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
 
   const itemMap = new Map<number, { purchaseId: number; productId: number; productName: string; size: string; boxes: number; ratePerBox: string }[]>();
   for (const it of purchaseItems) { const a = itemMap.get(it.purchaseId) || []; a.push(it); itemMap.set(it.purchaseId, a); }
+
+  const search = query.trim().toLocaleLowerCase();
+  const filteredSuppliers = search
+    ? suppliers.filter((supplier) => {
+        const purchasesForSupplier = purchMap.get(supplier.id) ?? [];
+        const searchable = [
+          supplier.name,
+          supplier.phone ?? "",
+          ...purchasesForSupplier.flatMap((purchase) => [
+            purchase.entryDate,
+            purchase.note ?? "",
+            ...(itemMap.get(purchase.id) ?? []).flatMap((item) => [item.productName, item.size]),
+          ]),
+        ];
+        return searchable.join(" ").toLocaleLowerCase().includes(search);
+      })
+    : suppliers;
 
   if (!suppliers.length) return <p className="text-sm text-muted-foreground">No suppliers yet — add one above.</p>;
 
@@ -59,7 +78,18 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
   return (
     <div className="space-y-3">
       <h2 className="text-base font-bold">Supplier Ledger</h2>
-      {suppliers.map((s) => {
+      <LiveSearch
+        value={query}
+        onChange={setQuery}
+        placeholder="Search supplier, product, or purchase..."
+        label="Search supplier ledger"
+      />
+      {filteredSuppliers.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+          No suppliers match your search.
+        </p>
+      ) : null}
+      {filteredSuppliers.map((s) => {
         const t = totMap.get(s.id);
         const total = Number(t?.total ?? 0);
         const paidTotal = Number(t?.paid ?? 0);
@@ -94,16 +124,16 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
                       const isEditing = editingId === p.id;
                       const isDeleting = deletingId === p.id;
                       return (
-                        <li key={p.id} className="py-3">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
+                        <li key={p.id} className="w-full py-3">
+                          <div className="flex flex-col gap-2">
+                            <div className="min-w-0 w-full">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="font-semibold">{fmtDate(p.entryDate)}</span>
                                 <span className={rb(p.direction)}>{p.direction === "in" ? "Stock In" : "Return"}</span>
                               </div>
                               {its.length ? (
-                                <div className="mt-1.5 overflow-x-auto rounded-lg border border-border/60">
-                                  <table className="w-full min-w-[430px] text-xs">
+                                <div className="mt-1.5 w-full min-w-0 overflow-x-auto rounded-lg border border-border/60">
+                                  <table className="w-full table-fixed text-xs">
                                     <thead>
                                       <tr className="bg-muted/60 text-left text-muted-foreground">
                                         <th className="px-2 py-1 font-semibold">Sr</th>
@@ -164,4 +194,3 @@ export function SupplierLedger({ suppliers, purchases, purchaseItems, supplierPa
 const rb = (dir: "in" | "return") => dir === "in" ? "rounded-full px-2 py-0.5 text-xs font-semibold bg-primary/10 text-primary" : "rounded-full px-2 py-0.5 text-xs font-semibold bg-amber-500/10 text-amber-600";
 const ps = (t: string, p: string) => { const T = Number(t); const P = Number(p); return P <= 0 ? "pending" : P >= T ? "paid" : "partial"; };
 const pn = (note: string | null) => note ? ` · ${note}` : "";
-

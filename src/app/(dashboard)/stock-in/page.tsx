@@ -4,11 +4,11 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { StockForm } from "@/components/stock/stock-form";
-import { StockEntryRow } from "@/components/stock/stock-entry-row";
+import { StockEntryList } from "@/components/stock/stock-entry-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { db, products, stockIn } from "@/db";
-import { todayIST, formatDate } from "@/lib/dates";
+import { todayIST } from "@/lib/dates";
 
 export const metadata = { title: "Stock In" };
 
@@ -66,26 +66,19 @@ export default async function StockInPage({
         </Link>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-6">
         {tab === "today" ? (
           <Card>
             <CardHeader>
               <CardTitle>Today&apos;s Entries ({todayEntries.length})</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {todayEntries.length === 0 ? (
-                <p className="px-5 pb-5 text-sm text-muted-foreground">No stock added today.</p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {todayEntries.map((e) => (
-                    <StockEntryRow
-                      key={e.id}
-                      entry={{ id: e.id, entryDate: e.entryDate, productId: e.productId, boxes: e.boxes, note: e.note }}
-                      products={productOpts}
-                    />
-                  ))}
-                </ul>
-              )}
+              <StockEntryList
+                entries={todayEntries}
+                products={productOpts}
+                emptyMessage="No stock added today."
+                showDate={false}
+              />
             </CardContent>
           </Card>
         ) : (
@@ -112,23 +105,12 @@ export default async function StockInPage({
                 </Button>
               </form>
 
-              {historyEntries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No entries in this range.</p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {historyEntries.map((e) => (
-                    <li key={e.id}>
-                      <div className="flex items-center gap-2 pb-1 pt-3 text-xs font-medium text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5" /> {formatDate(e.entryDate)}
-                      </div>
-                      <StockEntryRow
-                        entry={{ id: e.id, entryDate: e.entryDate, productId: e.productId, boxes: e.boxes, note: e.note }}
-                        products={productOpts}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <StockEntryList
+                entries={historyEntries}
+                products={productOpts}
+                emptyMessage="No entries in this range."
+                showDate
+              />
             </CardContent>
           </Card>
         )}
@@ -149,4 +131,3 @@ export default async function StockInPage({
     </>
   );
 }
-

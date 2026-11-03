@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronDown,
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/dates";
+import { LiveSearch } from "@/components/ui/live-search";
 
 export type ItemLine = {
   productId: number;
@@ -56,10 +57,8 @@ export type CustomerGroup = {
 const money = (n: number) =>
   "₹" + n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
-function itemsSummary(items: ItemLine[]): string {
-  return items
-    .map((i) => `${i.boxes} x ${i.name}${i.size ? " " + i.size : ""}`)
-    .join(", ");
+function itemLabel(item: ItemLine): string {
+  return `${item.boxes} x ${item.name}${item.size ? " " + item.size : ""}`;
 }
 
 function statusOf(sale: SaleRow): "paid" | "pending" | "partial" {
@@ -76,9 +75,12 @@ function statusBadge(status: "paid" | "pending" | "partial") {
 
 function buildReminderMessage(c: CustomerGroup): string {
   const pendingSales = c.sales.filter((s) => s.pending > 0.005);
-  const lines = pendingSales.map(
-    (s) => `- ${formatDate(s.saleDate)}: ${itemsSummary(s.items)} - Rs. ${s.pending.toLocaleString("en-IN")}`,
-  );
+  const lines = pendingSales.flatMap((s) => [
+    `*${formatDate(s.saleDate)}*`,
+    ...s.items.map((item) => `  • ${itemLabel(item)}`),
+    `  Pending: Rs. ${s.pending.toLocaleString("en-IN")}`,
+    "",
+  ]);
   return [
     `Hello ${c.name},`,
     "This is a reminder from NASEEB DAILY NEEDS & AGENCIES.",
@@ -121,6 +123,23 @@ export function PendingView({
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [payTarget, setPayTarget] = useState<PayTarget | null>(null);
   const [wa, setWa] = useState<WaState>(null);
+  const [query, setQuery] = useState("");
+  const filteredCustomers = useMemo(() => {
+    const search = query.trim().toLocaleLowerCase();
+    if (!search) return customers;
+    return customers.filter((customer) =>
+      [
+        customer.name,
+        customer.phone ?? "",
+        ...customer.sales.flatMap((sale) =>
+          sale.items.flatMap((item) => [item.name, item.size]),
+        ),
+      ]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(search),
+    );
+  }, [customers, query]);
 
   const fd = (vals: PaymentValues) => {
     const form = new FormData();
@@ -178,9 +197,17 @@ export function PendingView({
   return (
     <div className="space-y-4">
       {customers.length > 0 ? (
-        <Button variant="accent" className="w-full" size="lg" onClick={shareAll}>
-          <Share2 /> Share All Pending ({customers.length})
-        </Button>
+        <>
+          <LiveSearch
+            value={query}
+            onChange={setQuery}
+            placeholder="Search customer or item..."
+            label="Search pending customers"
+          />
+          <Button variant="accent" className="w-full" size="lg" onClick={shareAll}>
+            <Share2 /> Share All Pending ({customers.length})
+          </Button>
+        </>
       ) : null}
 
       {customers.length === 0 ? (
@@ -193,7 +220,13 @@ export function PendingView({
         </Card>
       ) : null}
 
-      {customers.map((c) => {
+      {customers.length > 0 && filteredCustomers.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+          No pending customers match your search.
+        </p>
+      ) : null}
+
+      {filteredCustomers.map((c) => {
         const open = openKey === c.key;
         return (
           <Card key={c.key} className="overflow-hidden">
@@ -236,7 +269,11 @@ export function PendingView({
                           <p className="text-xs text-muted-foreground">
                             {formatDate(s.saleDate)} · {s.deliveredBy}
                           </p>
-                          <p className="text-sm font-medium">{itemsSummary(s.items)}</p>
+                          <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm font-medium">
+                            {s.items.map((item, index) => (
+                              <li key={`${item.productId}-${index}`}>{itemLabel(item)}</li>
+                            ))}
+                          </ul>
                         </div>
                         {statusBadge(statusOf(s))}
                       </div>

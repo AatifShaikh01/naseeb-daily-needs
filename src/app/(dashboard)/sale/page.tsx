@@ -58,7 +58,7 @@ export default async function SalePage() {
           Add staff in Settings first.
         </p>
       ) : (
-        <div className="max-w-xl">
+        <div className="w-full">
           <div className="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-6">
             <SaleForm products={saleProducts} staff={saleStaff} today={today} />
           </div>

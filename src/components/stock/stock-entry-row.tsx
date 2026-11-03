@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { CalendarDays, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteStockEntryAction, updateStockEntryAction } from "@/lib/actions/stock";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
+import { formatDate } from "@/lib/dates";
 
 type Opt = { id: number; name: string; size: string };
 type Entry = { id: number; entryDate: string; productId: number; boxes: number; note: string };
@@ -19,9 +20,11 @@ const inputCls =
 export function StockEntryRow({
   entry,
   products,
+  showDate = false,
 }: {
   entry: Entry;
   products: Opt[];
+  showDate?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -48,40 +51,47 @@ export function StockEntryRow({
 
   return (
     <>
-      <li className="flex items-center gap-3 px-5 py-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{label}</p>
-          <p className="text-xs text-muted-foreground">
-            {entry.boxes} boxes{entry.note ? ` · ${entry.note}` : ""}
-          </p>
-        </div>
-
-        {confirming ? (
-          <span className="flex items-center gap-1.5 rounded-xl bg-destructive/10 px-2 py-1">
-            <span className="text-[11px] font-medium text-destructive">Delete?</span>
-            <Button type="button" size="sm" variant="destructive" className="h-7 px-2 text-[11px]"
-              disabled={pending} onClick={handleDelete}>
-              {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Delete"}
-            </Button>
-            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[11px]"
-              onClick={() => setConfirming(false)} disabled={pending}>
-              Cancel
-            </Button>
-          </span>
-        ) : (
-          <div className="flex items-center gap-1">
-            <button type="button" onClick={() => setEditing(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label={`Edit ${label}`}>
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button type="button" onClick={() => setConfirming(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              aria-label={`Delete ${label}`}>
-              <Trash2 className="h-4 w-4" />
-            </button>
+      <li>
+        {showDate ? (
+          <div className="flex items-center gap-2 px-5 pb-1 pt-3 text-xs font-medium text-muted-foreground">
+            <CalendarDays className="h-3.5 w-3.5" /> {formatDate(entry.entryDate)}
           </div>
-        )}
+        ) : null}
+        <div className="flex items-center gap-3 px-5 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{label}</p>
+            <p className="text-xs text-muted-foreground">
+              {entry.boxes} boxes{entry.note ? ` · ${entry.note}` : ""}
+            </p>
+          </div>
+
+          {confirming ? (
+            <span className="flex items-center gap-1.5 rounded-xl bg-destructive/10 px-2 py-1">
+              <span className="text-[11px] font-medium text-destructive">Delete?</span>
+              <Button type="button" size="sm" variant="destructive" className="h-7 px-2 text-[11px]"
+                disabled={pending} onClick={handleDelete}>
+                {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Delete"}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[11px]"
+                onClick={() => setConfirming(false)} disabled={pending}>
+                Cancel
+              </Button>
+            </span>
+          ) : (
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => setEditing(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={`Edit ${label}`}>
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={() => setConfirming(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                aria-label={`Delete ${label}`}>
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </li>
 
       {editing ? (
@@ -176,4 +186,3 @@ function EditStockDialog({
     </div>
   );
 }
-

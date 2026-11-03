@@ -3,6 +3,7 @@ import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import { PageHeader } from "@/components/layout/page-header";
 import { SaleCard, type SaleCardData } from "@/components/sale/sale-card";
 import { Button } from "@/components/ui/button";
+import { LiveFormSearch } from "@/components/ui/live-form-search";
 import Link from "next/link";
 import { db, payments, products, saleItems, sales, staff, stockIn } from "@/db";
 import { todayIST } from "@/lib/dates";
@@ -141,8 +142,13 @@ export default async function SalesPage({
           </div>
           <div className="space-y-1">
             <label htmlFor="q" className="text-xs font-medium text-muted-foreground">Customer</label>
-            <input id="q" name="q" defaultValue={params.q ?? ""} placeholder="Search name"
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm" />
+            <LiveFormSearch
+              key={params.q ?? ""}
+              initialValue={params.q ?? ""}
+              name="q"
+              placeholder="Search name"
+              label="Search customer"
+            />
           </div>
           <div className="space-y-1">
             <label htmlFor="staff" className="text-xs font-medium text-muted-foreground">Delivered By</label>

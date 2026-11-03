@@ -1,8 +1,7 @@
 import { asc, sql } from "drizzle-orm";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { StockBalanceList } from "@/components/stock/stock-balance-list";
 import { db, products, saleItems, stockIn } from "@/db";
 import { lowStockThreshold } from "@/lib/config";
 
@@ -51,33 +50,7 @@ export default async function StockPage() {
         </p>
       ) : null}
 
-      {balances.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            No products yet — add some from Products.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {balances.map((b) => (
-            <Card key={b.product.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{b.product.name}</p>
-                    <p className="text-xs text-muted-foreground">{b.product.size}</p>
-                  </div>
-                  {b.balance < threshold ? <Badge variant="destructive">Low</Badge> : null}
-                </div>
-                <p className="mt-3 text-3xl font-bold leading-none">{b.balance}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  boxes · in {b.inB} − sold {b.soldB}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <StockBalanceList balances={balances} threshold={threshold} />
     </>
   );
 }
