@@ -11,7 +11,7 @@ import { NumberStepper } from "@/components/ui/number-stepper";
 import { formatDate } from "@/lib/dates";
 
 type Opt = { id: number; name: string; size: string };
-type Entry = { id: number; entryDate: string; productId: number; boxes: number; note: string };
+type Entry = { id: number; entryDate: string; expiryDate: string | null; productId: number; boxes: number; note: string };
 
 const inputCls =
   "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring";
@@ -62,6 +62,7 @@ export function StockEntryRow({
             <p className="truncate text-sm font-medium">{label}</p>
             <p className="text-xs text-muted-foreground">
               {entry.boxes} boxes{entry.note ? ` · ${entry.note}` : ""}
+              {entry.expiryDate ? ` · Exp: ${formatDate(entry.expiryDate)}` : ""}
             </p>
           </div>
 
@@ -166,6 +167,11 @@ function EditStockDialog({
           <div className="space-y-1.5">
             <label htmlFor="ed-boxes" className="text-sm font-medium">Boxes</label>
             <NumberStepper value={boxes} min={1} onChange={setBoxes} />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ed-expiry" className="text-sm font-medium">Expiry date (optional)</label>
+            <input id="ed-expiry" name="expiryDate" type="date"
+              defaultValue={entry.expiryDate ?? ""} className={inputCls} />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="ed-note" className="text-sm font-medium">Note</label>

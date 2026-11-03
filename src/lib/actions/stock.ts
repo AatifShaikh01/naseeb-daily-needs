@@ -39,6 +39,7 @@ export async function createStockEntriesAction(
       entryDate,
       productId: r.productId,
       boxes: r.boxes,
+      expiryDate: r.expiryDate || null,
       note: note ?? "",
     })),
   );
@@ -63,13 +64,14 @@ export async function updateStockEntryAction(
     productId: formData.get("productId"),
     boxes: formData.get("boxes"),
     note: String(formData.get("note") ?? "").trim() || null,
+    expiryDate: formData.get("expiryDate") ?? "",
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { entryDate, productId, boxes, note } = parsed.data;
+  const { entryDate, productId, boxes, note, expiryDate } = parsed.data;
   await db
     .update(stockIn)
-    .set({ entryDate, productId, boxes, note: note ?? "" })
+    .set({ entryDate, productId, boxes, expiryDate: expiryDate || null, note: note ?? "" })
     .where(eq(stockIn.id, id));
 
   revalidatePath("/stock");

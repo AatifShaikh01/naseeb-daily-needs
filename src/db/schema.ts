@@ -127,6 +127,7 @@ export const stockIn = pgTable(
   {
     id: serial("id").primaryKey(),
     entryDate: date("entry_date").notNull(),
+    expiryDate: date("expiry_date"),
     productId: integer("product_id")
       .notNull()
       .references(() => products.id),

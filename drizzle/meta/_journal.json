@@ -36,6 +36,13 @@
       "when": 1793703600000,
       "tag": "0004_staff_accounts_and_payment_attribution",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793717280000,
+      "tag": "0005_stock_in_expiry_date",
+      "breakpoints": true
     }
   ]
 }

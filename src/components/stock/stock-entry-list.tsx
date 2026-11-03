@@ -6,7 +6,7 @@ import { LiveSearch } from "@/components/ui/live-search";
 import { StockEntryRow } from "@/components/stock/stock-entry-row";
 
 type ProductOption = { id: number; name: string; size: string };
-type StockEntry = { id: number; entryDate: string; productId: number; boxes: number; note: string };
+type StockEntry = { id: number; entryDate: string; expiryDate: string | null; productId: number; boxes: number; note: string };
 
 export function StockEntryList({
   entries,
@@ -24,7 +24,7 @@ export function StockEntryList({
   const filtered = search
     ? entries.filter((entry) => {
         const product = products.find((item) => item.id === entry.productId);
-        return `${product?.name ?? ""} ${product?.size ?? ""} ${entry.note} ${entry.entryDate}`
+        return `${product?.name ?? ""} ${product?.size ?? ""} ${entry.note} ${entry.entryDate} ${entry.expiryDate ?? ""}`
           .toLocaleLowerCase()
           .includes(search);
       })

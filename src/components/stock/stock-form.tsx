@@ -9,7 +9,7 @@ import { createStockEntriesAction } from "@/lib/actions/stock";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
 
-type Row = { key: number; productId: number; boxes: number };
+type Row = { key: number; productId: number; boxes: number; expiryDate: string };
 
 const inputCls =
   "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring";
@@ -26,11 +26,11 @@ export function StockForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [rows, setRows] = useState<Row[]>([{ key: 1, productId: products[0]?.id ?? 0, boxes: 1 }]);
+  const [rows, setRows] = useState<Row[]>([{ key: 1, productId: products[0]?.id ?? 0, boxes: 1, expiryDate: "" }]);
   const [nextKey, setNextKey] = useState(2);
 
   const addRow = () => {
-    setRows((r) => [...r, { key: nextKey, productId: products[0]?.id ?? 0, boxes: 1 }]);
+    setRows((r) => [...r, { key: nextKey, productId: products[0]?.id ?? 0, boxes: 1, expiryDate: "" }]);
     setNextKey((k) => k + 1);
   };
   const removeRow = (key: number) => setRows((r) => (r.length > 1 ? r.filter((x) => x.key !== key) : r));
@@ -42,7 +42,7 @@ export function StockForm({
     const fd = new FormData(e.currentTarget);
     const valid = rows.filter((r) => r.productId > 0 && r.boxes >= 1);
     const entriesPayload = JSON.stringify(
-      valid.map((r) => ({ productId: r.productId, boxes: r.boxes })),
+      valid.map((r) => ({ productId: r.productId, boxes: r.boxes, expiryDate: r.expiryDate })),
     );
     fd.set("entries", entriesPayload);
     startTransition(async () => {
@@ -50,7 +50,7 @@ export function StockForm({
       if (res?.ok) {
         toast.success(`Stock in saved (${valid.length} product${valid.length > 1 ? "s" : ""})`);
         router.refresh();
-        setRows([{ key: Date.now(), productId: products[0]?.id ?? 0, boxes: 1 }]);
+        setRows([{ key: Date.now(), productId: products[0]?.id ?? 0, boxes: 1, expiryDate: "" }]);
         setNextKey((k) => k + 1);
       } else if (res?.error) {
         toast.error(res.error);
@@ -93,6 +93,16 @@ export function StockForm({
               <label className="text-xs text-muted-foreground">Boxes</label>
               <NumberStepper value={row.boxes} min={1} onChange={(n) => updateRow(row.key, { boxes: n })} />
             </div>
+            <div className="min-w-40 flex-1 space-y-1">
+              <label htmlFor={`expiry-${row.key}`} className="text-xs text-muted-foreground">Expiry date (optional)</label>
+              <input
+                id={`expiry-${row.key}`}
+                type="date"
+                value={row.expiryDate}
+                onChange={(event) => updateRow(row.key, { expiryDate: event.target.value })}
+                className={inputCls}
+              />
+            </div>
             <button
               type="button"
               onClick={() => removeRow(row.key)}
@@ -118,4 +128,3 @@ export function StockForm({
     </form>
   );
 }
-

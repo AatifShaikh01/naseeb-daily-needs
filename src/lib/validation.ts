@@ -24,6 +24,7 @@ export const stockBatchSchema = z.object({
       z.object({
         productId: z.coerce.number().int().positive("Select a product in every row"),
         boxes: z.coerce.number().int().min(1, "At least 1 box in every row").max(100000),
+        expiryDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expiry date must be YYYY-MM-DD")]).optional(),
       }),
     )
     .min(1, "Add at least one product")
@@ -36,6 +37,7 @@ export const stockEntrySchema = z.object({
   productId: z.coerce.number().int().positive("Select a product"),
   boxes: z.coerce.number().int().min(1, "At least 1 box").max(100000),
   note: z.union([z.literal(""), z.string().trim().max(200)]).nullable().optional(),
+  expiryDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expiry date must be YYYY-MM-DD")]).optional(),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
