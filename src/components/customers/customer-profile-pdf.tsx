@@ -29,7 +29,7 @@ type CustomerProfilePdfData = {
     status: string;
     note: string;
     items: { name: string; size: string; boxes: number; rate: number; amount: number }[];
-    payments: { paidOn: string; mode: string; amount: number; note: string }[];
+    payments: { paidOn: string; mode: string; amount: number; note: string; receivedBy: string }[];
   }[];
 };
 
@@ -50,6 +50,16 @@ export function CustomerProfilePdf({ customer, sales }: CustomerProfilePdfData) 
   const handleDownload = async () => {
     try {
       setBusy(true);
+      const paymentRows = sales.flatMap((sale) =>
+        sale.payments.map((payment) => [
+          `#${sale.id}`,
+          dateLabel(payment.paidOn),
+          payment.mode,
+          money(payment.amount),
+          payment.receivedBy,
+          payment.note || "—",
+        ]),
+      );
       const sections = [
         {
           title: "Customer Details",
@@ -93,16 +103,8 @@ export function CustomerProfilePdf({ customer, sales }: CustomerProfilePdfData) 
         },
         {
           title: "Payment History",
-          head: ["Sale", "Payment Date", "Mode", "Amount", "Note"],
-          body: sales.flatMap((sale) =>
-            sale.payments.map((payment) => [
-              `#${sale.id}`,
-              dateLabel(payment.paidOn),
-              payment.mode,
-              money(payment.amount),
-              payment.note || "—",
-            ]),
-          ),
+          head: ["Sale", "Payment Date", "Method (Cash / Online)", "Amount", "Paid To / Received By", "Note"],
+          body: paymentRows.length ? paymentRows : [["No payment entries recorded", "", "", "", "", ""]],
         },
       ];
       const notes = sales.filter((sale) => sale.note.trim());

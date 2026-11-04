@@ -35,6 +35,13 @@ function money(amount: number) {
   return `₹${amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
+function paymentModeLabel(mode: string) {
+  if (mode === "cash") return "Cash";
+  if (mode === "upi") return "UPI / Online";
+  if (mode === "bank") return "Bank Transfer";
+  return mode;
+}
+
 function status(total: number, paid: number): "Paid" | "Partial" | "Pending" {
   if (paid >= total - 0.005) return "Paid";
   if (paid <= 0.005) return "Pending";
@@ -120,8 +127,10 @@ export default async function CustomerProfilePage({
         paidOn: payments.paidOn,
         mode: payments.mode,
         note: payments.note,
+        receivedBy: staff.name,
       })
       .from(payments)
+      .leftJoin(staff, eq(payments.staffId, staff.id))
       .where(inArray(payments.saleId, saleIds))
       .orderBy(asc(payments.paidOn), asc(payments.id)),
     db.select({ id: staff.id, name: staff.name }).from(staff),
@@ -175,9 +184,10 @@ export default async function CustomerProfilePage({
       })),
       payments: (paymentsBySale.get(sale.id) ?? []).map((payment) => ({
         paidOn: payment.paidOn,
-        mode: payment.mode,
+        mode: paymentModeLabel(payment.mode),
         amount: Number(payment.amount),
         note: payment.note,
+        receivedBy: payment.receivedBy ?? "Owner / Admin",
       })),
     };
   });
@@ -328,7 +338,10 @@ export default async function CustomerProfilePage({
                       <ul className="space-y-2">
                         {salePayments.map((payment) => (
                           <li key={payment.id} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-sm">
-                            <span>{dateLabel(payment.paidOn)} · <span className="capitalize">{payment.mode}</span></span>
+                            <span>
+                              {dateLabel(payment.paidOn)} · {paymentModeLabel(payment.mode)}
+                              <span className="block text-xs text-muted-foreground">Received by {payment.receivedBy ?? "Owner / Admin"}</span>
+                            </span>
                             <span className="font-medium">{money(Number(payment.amount))}</span>
                             {payment.note ? <span className="w-full text-xs text-muted-foreground">{payment.note}</span> : null}
                           </li>
