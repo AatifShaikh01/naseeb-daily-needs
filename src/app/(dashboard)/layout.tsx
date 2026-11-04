@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Header } from "@/components/layout/header";
+import { LiveDataRefresh } from "@/components/layout/live-data-refresh";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getSession } from "@/lib/actions/auth";
@@ -23,6 +24,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <RouteProgress />
+      <LiveDataRefresh />
       <Suspense
         fallback={
           <div className="sticky top-0 z-30 border-b border-border bg-card">
