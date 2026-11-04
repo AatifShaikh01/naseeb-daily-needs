@@ -43,6 +43,13 @@
       "when": 1793717280000,
       "tag": "0005_stock_in_expiry_date",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793786061409,
+      "tag": "0006_sale_approval_status",
+      "breakpoints": true
     }
   ]
 }

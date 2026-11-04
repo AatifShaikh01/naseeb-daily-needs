@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, Loader2, Pencil, Receipt, Trash2, UserRound } from "lucide-react";
+import { Check, ChevronDown, Loader2, Pencil, Receipt, ThumbsDown, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
-import { deleteSaleAction } from "@/lib/actions/sales";
+import { deleteSaleAction, setSaleApprovalAction } from "@/lib/actions/sales";
 import { SaleForm, type SaleProduct, type SaleStaff, type InitialSale } from "@/components/sale/sale-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,7 @@ export type SaleCardData = {
   customerPhone: string | null;
   deliveredBy: number;
   paymentStatus: "paid" | "pending" | "partial";
+  approvalStatus: "pending" | "approved" | "declined";
   totalAmount: string;
   paidAmount: string;
   note: string | null;
@@ -71,6 +72,7 @@ export function SaleCard({
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
 
   const totalBoxes = sale.items.reduce((s, it) => s + it.boxes, 0);
   const itemsSummary = sale.items
@@ -89,6 +91,21 @@ export function SaleCard({
       router.refresh();
     } else {
       toast.error(res.error ?? "Could not delete sale.");
+    }
+  }
+
+  async function onReview(status: "approved" | "declined") {
+    setReviewing(true);
+    const fd = new FormData();
+    fd.append("id", String(sale.id));
+    fd.append("status", status);
+    const res = await setSaleApprovalAction(fd);
+    setReviewing(false);
+    if (res.ok) {
+      toast.success(status === "approved" ? "Sale approved" : "Sale declined");
+      router.refresh();
+    } else {
+      toast.error(res.error ?? "Could not update sale review.");
     }
   }
 
@@ -122,6 +139,17 @@ export function SaleCard({
           <div className="flex items-center gap-2">
             <p className="truncate font-semibold">{sale.customerName}</p>
             <StatusBadge status={sale.paymentStatus} />
+            <Badge className={
+              sale.approvalStatus === "approved"
+                ? "bg-emerald-100 text-emerald-700"
+                : sale.approvalStatus === "declined"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-amber-100 text-amber-700"
+            }>
+              {sale.approvalStatus === "pending"
+                ? "Awaiting review"
+                : sale.approvalStatus === "approved" ? "Approved" : "Declined"}
+            </Badge>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {formatDate(sale.saleDate)}
@@ -195,6 +223,16 @@ export function SaleCard({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
+            {canEdit && sale.approvalStatus === "pending" ? (
+              <>
+                <Button size="sm" onClick={() => onReview("approved")} disabled={reviewing}>
+                  {reviewing ? <Loader2 className="animate-spin" /> : <Check />} Approve
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onReview("declined")} disabled={reviewing}>
+                  {reviewing ? <Loader2 className="animate-spin" /> : <ThumbsDown />} Decline
+                </Button>
+              </>
+            ) : null}
             <Button asChild variant="outline" size="sm">
               <Link href={`/customers/${sale.id}`}><UserRound /> Customer Profile</Link>
             </Button>

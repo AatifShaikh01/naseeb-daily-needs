@@ -26,6 +26,11 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "pending",
   "partial",
 ]);
+export const saleApprovalStatusEnum = pgEnum("sale_approval_status", [
+  "pending",
+  "approved",
+  "declined",
+]);
 export const paymentModeEnum = pgEnum("payment_mode", ["cash", "upi", "bank"]);
 export const staffRoleEnum = pgEnum("staff_role", ["admin", "staff"]);
 
@@ -156,6 +161,9 @@ export const sales = pgTable(
     paymentStatus: paymentStatusEnum("payment_status")
       .notNull()
       .default("pending"),
+    approvalStatus: saleApprovalStatusEnum("approval_status")
+      .notNull()
+      .default("approved"),
     totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
     paidAmount: numeric("paid_amount", { precision: 12, scale: 2 })
       .notNull()

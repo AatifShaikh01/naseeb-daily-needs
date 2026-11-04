@@ -22,6 +22,7 @@ export default async function SalesPage({
     q?: string;
     staff?: string;
     status?: string;
+    approval?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -64,6 +65,8 @@ export default async function SalesPage({
   if (params.staff) conds.push(eq(sales.deliveredBy, Number(params.staff)));
   if (params.status === "paid" || params.status === "pending" || params.status === "partial")
     conds.push(eq(sales.paymentStatus, params.status));
+  if (params.approval === "pending" || params.approval === "approved" || params.approval === "declined")
+    conds.push(eq(sales.approvalStatus, params.approval));
   if (isStaffSession(session)) {
     const staffSales = or(eq(sales.staffId, session.uid), eq(sales.deliveredBy, session.uid));
     if (staffSales) conds.push(staffSales);
@@ -77,6 +80,7 @@ export default async function SalesPage({
       customerPhone: sales.customerPhone,
       deliveredBy: sales.deliveredBy,
       paymentStatus: sales.paymentStatus,
+      approvalStatus: sales.approvalStatus,
       totalAmount: sales.totalAmount,
       paidAmount: sales.paidAmount,
       note: sales.note,
@@ -113,6 +117,7 @@ export default async function SalesPage({
     customerPhone: s.customerPhone,
     deliveredBy: s.deliveredBy,
     paymentStatus: s.paymentStatus,
+    approvalStatus: s.approvalStatus,
     totalAmount: s.totalAmount,
     paidAmount: s.paidAmount,
     note: s.note || null,
@@ -133,18 +138,18 @@ export default async function SalesPage({
       .map((p) => ({ amount: p.amount, paidOn: p.paidOn, mode: p.mode, note: p.note })),
   }));
 
-  const hasFilter = Boolean(params.date || params.q || params.staff || params.status);
+  const hasFilter = Boolean(params.date || params.q || params.staff || params.status || params.approval);
 
   return (
     <>
       <PageHeader
         title="Sales"
-        description="All recorded sales — filter by date, customer, staff, or payment status."
+        description="Review staff sales and filter by date, customer, staff, or status."
       />
 
       {/* Filters */}
       <form method="get" className="mb-5 space-y-3">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div className="space-y-1">
             <label htmlFor="date" className="text-xs font-medium text-muted-foreground">Date</label>
             <input id="date" name="date" type="date" defaultValue={params.date ?? ""}
@@ -180,6 +185,18 @@ export default async function SalesPage({
               <option value="partial">Partial</option>
             </select>
           </div>
+          {canEdit ? (
+            <div className="space-y-1">
+              <label htmlFor="approval" className="text-xs font-medium text-muted-foreground">Sale review</label>
+              <select id="approval" name="approval" defaultValue={params.approval ?? ""}
+                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm">
+                <option value="">All</option>
+                <option value="pending">Awaiting review</option>
+                <option value="approved">Approved</option>
+                <option value="declined">Declined</option>
+              </select>
+            </div>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <Button type="submit" size="sm">Apply</Button>

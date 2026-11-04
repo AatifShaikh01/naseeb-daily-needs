@@ -8,7 +8,7 @@ import { db, payments, saleItems, sales } from "@/db";
 import { todayIST } from "@/lib/dates";
 import { getSession } from "./auth";
 import { firstError, saleSchema } from "@/lib/validation";
-import { isStaffSession, requireAdmin } from "@/lib/authorization";
+import { isAdminSession, isStaffSession, requireAdmin } from "@/lib/authorization";
 
 export type ActionResult = { error?: string; ok?: boolean };
 
@@ -78,6 +78,7 @@ export async function createSaleAction(
       customerPhone,
       deliveredBy,
       paymentStatus,
+      approvalStatus: isAdminSession(session) ? "approved" : "pending",
       totalAmount: totalRounded.toFixed(2),
       paidAmount: paid.toFixed(2),
       paymentMode,
@@ -209,6 +210,32 @@ export async function deleteSaleAction(formData: FormData): Promise<ActionResult
   revalidatePath("/sale");
   revalidatePath("/pending");
   revalidatePath("/stock");
+  return { ok: true };
+}
+
+export async function setSaleApprovalAction(formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+
+  const id = Number(formData.get("id") ?? 0);
+  const status = formData.get("status");
+  if (!Number.isInteger(id) || id < 1) return { error: "Sale not found." };
+  if (status !== "approved" && status !== "declined")
+    return { error: "Choose approve or decline." };
+
+  const [sale] = await db
+    .update(sales)
+    .set({ approvalStatus: status })
+    .where(and(eq(sales.id, id), eq(sales.approvalStatus, "pending")))
+    .returning({ id: sales.id });
+  if (!sale) return { error: "This sale is no longer awaiting review." };
+
+  revalidatePath("/sales");
+  revalidatePath("/sale");
+  revalidatePath("/pending");
+  revalidatePath("/stock");
+  revalidatePath("/");
+  revalidatePath("/reports");
+  revalidatePath("/staff");
   return { ok: true };
 }
 
