@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, settings } from "@/db";
 import { requireAdmin } from "@/lib/authorization";
+import { lowStockThreshold } from "@/lib/config";
 
 export type SettingsActionResult = {
   error?: string;
@@ -30,7 +31,7 @@ export async function getSettingsAction(): Promise<SettingsActionResult> {
   await requireAdmin();
 
   try {
-    const lowStockLimit = (await getSetting("low_stock_limit")) ?? "5";
+    const lowStockLimit = String(await lowStockThreshold());
     const businessName = (await getSetting("business_name")) ?? "NASEEB DAILY NEEDS & AGENCIES";
     const businessPhone = (await getSetting("business_phone")) ?? "";
 
@@ -67,8 +68,8 @@ export async function updateSettingAction(
   // For low_stock_limit ensure numeric
   if (key === "low_stock_limit") {
     const num = Number(value);
-    if (!Number.isInteger(num) || num < 1) {
-      return { error: "Low-stock limit must be a positive integer." };
+    if (!Number.isInteger(num) || num < 1 || num > 1_000_000) {
+      return { error: "Low-stock limit must be a whole number between 1 and 1,000,000." };
     }
   }
 
@@ -80,6 +81,8 @@ export async function updateSettingAction(
       await db.insert(settings).values({ key, value });
     }
     revalidatePath("/settings");
+    revalidatePath("/stock");
+    revalidatePath("/");
     return { ok: true };
   } catch {
     return { error: "Could not update setting." };

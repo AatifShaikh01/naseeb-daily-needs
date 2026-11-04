@@ -62,7 +62,7 @@ export function StockBalanceList({
                     <p className="truncate text-sm font-semibold">{item.product.name}</p>
                     <p className="text-xs text-muted-foreground">{item.product.size}</p>
                   </div>
-                  {item.balance < threshold ? <Badge variant="destructive">Low</Badge> : null}
+                  {item.balance <= threshold ? <Badge variant="destructive">Low</Badge> : null}
                 </div>
                 <p className="mt-3 text-3xl font-bold leading-none">{item.balance}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">

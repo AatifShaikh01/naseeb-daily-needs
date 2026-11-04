@@ -54,8 +54,8 @@ export async function getStockBalances(): Promise<Map<number, StockBalance>> {
   return map;
 }
 
-export function isLowStock(balance: number): boolean {
-  return balance < lowStockThreshold();
+export async function isLowStock(balance: number): Promise<boolean> {
+  return balance <= await lowStockThreshold();
 }
 
 export type { products };

@@ -159,13 +159,13 @@ export async function getProductStock(): Promise<ProductStock[]> {
 
   const inMap = new Map(inRows.map((r) => [r.productId, num(r.total)]));
   const soldMap = new Map(soldRows.map((r) => [r.productId, num(r.total)]));
-  const threshold = lowStockThreshold();
+  const threshold = await lowStockThreshold();
 
   return productRows.map((p) => {
     const inBoxes = inMap.get(p.id) ?? 0;
     const soldBoxes = soldMap.get(p.id) ?? 0;
     const balance = inBoxes - soldBoxes;
-    return { id: p.id, name: p.name, size: p.size, balance, inBoxes, soldBoxes, low: balance < threshold };
+    return { id: p.id, name: p.name, size: p.size, balance, inBoxes, soldBoxes, low: balance <= threshold };
   });
 }
 

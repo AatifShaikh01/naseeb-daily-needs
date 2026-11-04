@@ -9,7 +9,7 @@ export const metadata = { title: "Current Stock" };
 
 
 export default async function StockPage() {
-  const threshold = lowStockThreshold();
+  const threshold = await lowStockThreshold();
 
   /* Products (order by id) */
   const productRows = await db.select().from(products).orderBy(asc(products.id));
@@ -35,7 +35,7 @@ export default async function StockPage() {
     return { product: p, inB, soldB, balance: inB - soldB };
   });
 
-  const lowStockCount = balances.filter((b) => b.balance < threshold).length;
+  const lowStockCount = balances.filter((b) => b.balance <= threshold).length;
 
   return (
     <>
@@ -46,7 +46,7 @@ export default async function StockPage() {
 
       {lowStockCount > 0 ? (
         <p className="mb-4 text-sm font-medium text-destructive">
-          {lowStockCount} product{lowStockCount > 1 ? "s" : ""} below {threshold} boxes.
+          {lowStockCount} product{lowStockCount > 1 ? "s" : ""} at or below {threshold} boxes.
         </p>
       ) : null}
 

@@ -6,7 +6,9 @@ import { StaffForm } from "@/components/settings/staff-form";
 import { StaffList } from "@/components/settings/staff-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BillBrandingForm } from "@/components/settings/bill-branding-form";
+import { StockThresholdForm } from "@/components/settings/stock-threshold-form";
 import { getBillBranding } from "@/lib/actions/bill-branding";
+import { lowStockThreshold } from "@/lib/config";
 import { db, staff } from "@/db";
 
 export const metadata = { title: "Settings" };
@@ -28,7 +30,10 @@ export default async function SettingsPage({
     })
     .from(staff)
     .orderBy(desc(staff.id));
-  const billBranding = await getBillBranding();
+  const [billBranding, stockThreshold] = await Promise.all([
+    getBillBranding(),
+    lowStockThreshold(),
+  ]);
 
   return (
     <>
@@ -55,6 +60,18 @@ export default async function SettingsPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Stock alert</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Set the box count at which products should show a low-stock warning.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <StockThresholdForm threshold={stockThreshold} />
+        </CardContent>
+      </Card>
 
       <Card className="mt-6">
         <details className="group">
