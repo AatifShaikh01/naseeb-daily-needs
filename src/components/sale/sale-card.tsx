@@ -21,6 +21,7 @@ export type SaleItemView = {
   productSize: string;
 };
 export type SalePaymentView = {
+  id: number;
   amount: string;
   paidOn: string;
   mode: string;
@@ -33,6 +34,7 @@ export type SaleCardData = {
   customerName: string;
   customerPhone: string | null;
   deliveredBy: number;
+  paymentMode: string;
   paymentStatus: "paid" | "pending" | "partial";
   approvalStatus: "pending" | "approved" | "declined";
   totalAmount: string;

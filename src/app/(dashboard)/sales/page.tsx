@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { SaleCard, type SaleCardData } from "@/components/sale/sale-card";
+import { SalesSelectionList } from "@/components/sale/delivery-packet";
 import { Button } from "@/components/ui/button";
 import { LiveFormSearch } from "@/components/ui/live-form-search";
 import Link from "next/link";
@@ -10,6 +11,7 @@ import { db, payments, products, saleItems, sales, staff, stockIn } from "@/db";
 import { todayIST } from "@/lib/dates";
 import { getSession } from "@/lib/actions/auth";
 import { isAdminSession, isStaffSession } from "@/lib/authorization";
+import { getBillBranding } from "@/lib/actions/bill-branding";
 
 export const metadata = { title: "Sales" };
 
@@ -86,6 +88,7 @@ export default async function SalesPage({
       deliveredBy: sales.deliveredBy,
       paymentStatus: sales.paymentStatus,
       approvalStatus: sales.approvalStatus,
+      paymentMode: sales.paymentMode,
       totalAmount: sales.totalAmount,
       paidAmount: sales.paidAmount,
       note: sales.note,
@@ -98,7 +101,7 @@ export default async function SalesPage({
   /* Items + payments for these sales */
   const saleIds = saleRows.map((s) => s.id);
   let itemRows: { saleId: number; productId: number; boxes: number; ratePerBox: string }[] = [];
-  let payRows: { saleId: number; amount: string; paidOn: string; mode: string; note: string }[] = [];
+  let payRows: { id: number; saleId: number; amount: string; paidOn: string; mode: string; note: string }[] = [];
   if (saleIds.length > 0) {
     const [it, pm] = await Promise.all([
       db
@@ -121,6 +124,7 @@ export default async function SalesPage({
     customerName: s.customerName,
     customerPhone: s.customerPhone,
     deliveredBy: s.deliveredBy,
+    paymentMode: s.paymentMode,
     paymentStatus: s.paymentStatus,
     approvalStatus: s.approvalStatus,
     totalAmount: s.totalAmount,
@@ -140,10 +144,29 @@ export default async function SalesPage({
       }),
     payments: payRows
       .filter((p) => p.saleId === s.id)
-      .map((p) => ({ amount: p.amount, paidOn: p.paidOn, mode: p.mode, note: p.note })),
+      .map((p) => ({ id: p.id, amount: p.amount, paidOn: p.paidOn, mode: p.mode, note: p.note })),
   }));
 
   const hasFilter = Boolean(params.date || params.q || params.staff || params.status || params.approval);
+  const branding = canEdit ? await getBillBranding() : null;
+  const packetSales = branding
+    ? cards.map((sale) => ({
+        ...sale,
+        paymentMode: sale.paymentMode,
+        totalAmount: Number(sale.totalAmount),
+        paidAmount: Number(sale.paidAmount),
+        branding,
+        items: sale.items.map((item) => ({
+          productId: item.productId,
+          productName: item.productName,
+          productSize: item.productSize,
+          boxes: item.boxes,
+          ratePerBox: Number(item.ratePerBox),
+          amount: Math.round(item.boxes * Number(item.ratePerBox) * 100) / 100,
+        })),
+        payments: sale.payments.map((payment) => ({ ...payment, amount: Number(payment.amount) })),
+      }))
+    : [];
 
   return (
     <>
@@ -220,7 +243,15 @@ export default async function SalesPage({
           No sales found.{hasFilter ? " Try clearing the filters." : " Record one from New Sale."}
         </p>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        canEdit && branding ? (
+          <SalesSelectionList
+            sales={packetSales}
+            staffNameById={staffMap}
+            products={editProducts}
+            staff={editStaff}
+            today={todayIST()}
+          />
+        ) : <div className="grid gap-3 lg:grid-cols-2">
           {cards.map((c) => (
             <SaleCard
               key={c.id}

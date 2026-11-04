@@ -10,7 +10,7 @@ import {
   type BillBranding,
 } from "@/lib/bill-branding";
 
-type BillPageProps = {
+export type BillPageProps = {
   id: number;
   saleDate: string;
   customerName: string;
@@ -23,11 +23,10 @@ type BillPageProps = {
   payments: { id: number; amount: number; paidOn: string; mode: string; note: string }[];
 };
 
-async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
+export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPageProps): Promise<void> {
   const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
   const billNo = `${bill.branding.billNumberPrefix.toUpperCase()}-${String(bill.id).padStart(4, "0")}`;
-      const { jsPDF } = await import("jspdf");
-      const { default: autoTable } = await import("jspdf-autotable");
+  const { default: autoTable } = await import("jspdf-autotable");
 
       const hex = bill.branding.color.slice(1);
       const accent: [number, number, number] = [
@@ -36,7 +35,6 @@ async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
         parseInt(hex.slice(4, 6), 16),
       ];
       const inr = (n: number) => `Rs.${n.toLocaleString("en-IN")}`;
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const M = 40;
       const C = pageW - M;
@@ -291,7 +289,13 @@ async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
       ].filter(Boolean).join(" · ");
       doc.text(doc.splitTextToSize(foot, C - M), pageW / 2, y + 14, { align: "center" });
 
-      return doc.output("blob");
+}
+
+async function buildPdfBlob(bill: BillPageProps): Promise<Blob> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  await appendBillToPdf(doc, bill);
+  return doc.output("blob");
 }
 
 function saveBlob(blob: Blob, name: string) {
