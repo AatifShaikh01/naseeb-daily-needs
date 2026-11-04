@@ -1,4 +1,4 @@
-import { IndianRupee, Package, Clock, ShoppingCart, Banknote, Boxes } from "lucide-react";
+import { IndianRupee, Package, Clock, ShoppingCart, Banknote, Boxes, FileText, UserRound } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -12,7 +12,7 @@ import { todayIST, formatDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/page-header";
 import { getSession } from "@/lib/actions/auth";
 import { isStaffSession } from "@/lib/authorization";
-import { db, payments, sales } from "@/db";
+import { db, payments, saleItems, sales } from "@/db";
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
@@ -61,10 +61,10 @@ async function DashboardContent() {
   const topPending = await getTopPendingCustomers(5);
 
   const stats = [
-    { label: "Total Sales (overall)", value: "₹" + totalSalesAmount.toLocaleString("en-IN"), icon: Package, accentClass: "bg-primary/10 text-primary" },
-    { label: "Delivered Today", value: deliveredBoxes + " boxes", icon: ShoppingCart, accentClass: "bg-secondary/10 text-secondary" },
-    { label: "Today's Sales", value: "₹" + salesAmount.toLocaleString("en-IN"), icon: IndianRupee, accentClass: "bg-accent/15 text-accent-foreground" },
-    { label: "Total Pending", value: "₹" + totalPending.toLocaleString("en-IN"), icon: Clock, accentClass: "bg-muted/15 text-muted-foreground" },
+    { label: "Total Sales (overall)", value: "₹" + totalSalesAmount.toLocaleString("en-IN"), icon: Package, accentClass: "bg-primary/10 text-primary", href: "/sales" },
+    { label: "Delivered Today", value: deliveredBoxes + " boxes", icon: ShoppingCart, accentClass: "bg-secondary/10 text-secondary", href: `/sales?date=${today}` },
+    { label: "Today's Sales", value: "₹" + salesAmount.toLocaleString("en-IN"), icon: IndianRupee, accentClass: "bg-accent/15 text-accent-foreground", href: `/sales?date=${today}` },
+    { label: "Total Pending", value: "₹" + totalPending.toLocaleString("en-IN"), icon: Clock, accentClass: "bg-muted/15 text-muted-foreground", href: "/pending" },
   ];
 
   return (
@@ -76,7 +76,13 @@ async function DashboardContent() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label}>
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={`${stat.label}: ${stat.value}. Open details`}
+          >
+          <Card className="h-full transition-shadow hover:shadow-float">
             <CardContent className="flex items-center gap-3 p-4">
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.accentClass}`}>
                 <stat.icon className="h-5 w-5" />
@@ -87,7 +93,17 @@ async function DashboardContent() {
               </div>
             </CardContent>
           </Card>
+          </Link>
         ))}
+      </div>
+      <div className="mt-4">
+        <Link
+          href={`/staff/daily?date=${today}`}
+          className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <FileText className="h-4 w-4 text-primary" />
+          Open today&apos;s staff sales &amp; payment report
+        </Link>
       </div>
       {/* Activity */}
       <Card className="mt-6">
@@ -107,20 +123,27 @@ async function DashboardContent() {
                   >
                     {item.kind === "stock" ? (
                       <Package className="h-4 w-4" />
+                    ) : item.kind === "visit" ? (
+                      <UserRound className="h-4 w-4" />
                     ) : (
                       <ShoppingCart className="h-4 w-4" />
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <Link
+                    href={item.kind === "stock" ? "/stock" : `/customers/${item.id}`}
+                    className="min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     <p className="truncate text-sm font-medium">
                       {item.kind === "stock" ? `${item.productName} (${item.size})` : item.customerName}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {item.kind === "stock"
                         ? `${boxLabel(item.boxes)}${item.note ? " — " + item.note : ""}`
-                        : `${boxLabel(item.boxes)} — ₹${item.amount.toLocaleString("en-IN")}`}
+                        : item.kind === "visit"
+                          ? "Shop visit — no order"
+                          : `${boxLabel(item.boxes)} — ₹${item.amount.toLocaleString("en-IN")}`}
                     </p>
-                  </div>
+                  </Link>
                   <div className="shrink-0 text-xs text-muted-foreground">{formatTime(item.time)}</div>
                 </li>
               ))}
@@ -141,7 +164,13 @@ async function DashboardContent() {
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {productStock.map((p) => (
-                <Card key={p.id} className="p-3">
+                <Link
+                  key={p.id}
+                  href="/stock"
+                  className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`View stock for ${p.name} ${p.size}`}
+                >
+                <Card className="h-full p-3 transition-shadow hover:shadow-float">
                   <CardContent className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium truncate">{p.name}</p>
@@ -156,6 +185,7 @@ async function DashboardContent() {
                   </CardContent>
                   {p.low && <Badge variant="destructive" className="mt-2">Low stock</Badge>}
                 </Card>
+                </Link>
               ))}
             </div>
           )}
@@ -173,7 +203,13 @@ async function DashboardContent() {
         <CardContent>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {staffDelivery.map((s) => (
-              <Card key={s.staffId} className="p-4">
+              <Link
+                key={s.staffId}
+                href={`/staff/${s.staffId}`}
+                className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`View ${s.name}'s staff report`}
+              >
+              <Card className="h-full p-4 transition-shadow hover:shadow-float">
                 <CardContent className="flex items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{s.name}</p>
@@ -189,6 +225,7 @@ async function DashboardContent() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
         </CardContent>
@@ -208,7 +245,12 @@ async function DashboardContent() {
               {topPending.map((c) => (
                 <li key={c.key} className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{c.name}</p>
+                    <Link
+                      href={`/pending?customer=${encodeURIComponent(c.name)}`}
+                      className="block truncate font-medium hover:text-primary hover:underline"
+                    >
+                      {c.name}
+                    </Link>
                     <p className="text-xs text-muted-foreground">{c.phone}</p>
                   </div>
                   <div className="shrink-0 text-right">
@@ -239,14 +281,14 @@ async function StaffDashboard({ staffId, staffName }: { staffId: number; staffNa
     await Promise.all([
       db
         .select({
-          count: sql<number>`count(*)`,
+          count: sql<number>`count(*) filter (where exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id}))`,
           amount: sql<string>`coalesce(sum(${sales.totalAmount}), 0)`,
         })
         .from(sales)
         .where(and(eq(sales.staffId, staffId), eq(sales.saleDate, today))),
       db
         .select({
-          count: sql<number>`count(*)`,
+          count: sql<number>`count(*) filter (where exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id}))`,
           amount: sql<string>`coalesce(sum(${sales.totalAmount}), 0)`,
         })
         .from(sales)
@@ -273,6 +315,7 @@ async function StaffDashboard({ staffId, staffName }: { staffId: number; staffNa
           totalAmount: sales.totalAmount,
           paidAmount: sales.paidAmount,
           paymentStatus: sales.paymentStatus,
+          hasItems: sql<boolean>`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
         })
         .from(sales)
         .where(scope)
@@ -326,7 +369,7 @@ async function StaffDashboard({ staffId, staffName }: { staffId: number; staffNa
               </span>
               <span className="shrink-0 text-right">
                 <span className="block text-sm font-semibold">₹{Number(sale.totalAmount).toLocaleString("en-IN")}</span>
-                <span className="text-xs capitalize text-muted-foreground">{sale.paymentStatus}</span>
+                <span className="text-xs capitalize text-muted-foreground">{sale.hasItems ? sale.paymentStatus : "No Order"}</span>
               </span>
             </Link>
           )) : <p className="text-sm text-muted-foreground">No related sales yet.</p>}

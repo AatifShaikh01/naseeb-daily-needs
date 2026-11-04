@@ -40,7 +40,7 @@ export async function getTodaySummary(today = todayIST()): Promise<TodaySummary>
       .where(eq(sales.saleDate, today)),
     db
       .select({
-        count: sql<string>`count(*)`,
+        count: sql<string>`count(*) filter (where exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id}))`,
         total: sql<string>`coalesce(sum(${sales.totalAmount}),0)`,
       })
       .from(sales)
@@ -69,7 +69,7 @@ export async function getTodaySummary(today = todayIST()): Promise<TodaySummary>
 /* ---------------- Today activity (stock in + sales) ---------------- */
 export type ActivityItem =
   | { kind: "stock"; id: number; time: Date; productName: string; size: string; boxes: number; note: string }
-  | { kind: "sale"; id: number; time: Date; customerName: string; boxes: number; amount: number };
+  | { kind: "sale" | "visit"; id: number; time: Date; customerName: string; boxes: number; amount: number };
 
 export async function getTodayActivity(today = todayIST()): Promise<ActivityItem[]> {
   const [stockRows, saleRows] = await Promise.all([
@@ -120,7 +120,7 @@ export async function getTodayActivity(today = todayIST()): Promise<ActivityItem
       note: r.note,
     })),
     ...saleRows.map((r) => ({
-      kind: "sale" as const,
+      kind: boxesBySale.has(r.id) ? "sale" as const : "visit" as const,
       id: r.id,
       time: r.createdAt,
       customerName: r.customerName,
@@ -279,6 +279,7 @@ export type DailyReport = {
   salesAmount: number;
   salesBoxes: number;
   salesCount: number;
+  noOrderCount: number;
   paymentsReceived: number;
   pendingAtDate: number;
 };
@@ -290,7 +291,11 @@ export async function getDailyReport(date: string): Promise<DailyReport> {
       .from(stockIn)
       .where(eq(stockIn.entryDate, date)),
     db
-      .select({ count: sql<string>`count(*)`, amount: sql<string>`coalesce(sum(${sales.totalAmount}),0)` })
+      .select({
+        count: sql<string>`count(*) filter (where exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id}))`,
+        noOrderCount: sql<string>`count(*) filter (where not exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id}))`,
+        amount: sql<string>`coalesce(sum(${sales.totalAmount}),0)`,
+      })
       .from(sales)
       .where(eq(sales.saleDate, date)),
     db
@@ -332,6 +337,7 @@ export async function getDailyReport(date: string): Promise<DailyReport> {
     salesAmount: num(saleRows[0]?.amount),
     salesBoxes: num(itemRows[0]?.boxes),
     salesCount: num(saleRows[0]?.count),
+    noOrderCount: num(saleRows[0]?.noOrderCount),
     paymentsReceived: num(payRows[0]?.total),
     pendingAtDate: num(pendRows[0]?.total),
   };

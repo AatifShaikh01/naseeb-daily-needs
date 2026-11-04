@@ -165,6 +165,8 @@ export default async function CustomerProfilePage({
   const pdfSales = customerSales.map((sale) => {
     const total = Number(sale.totalAmount);
     const paid = Number(sale.paidAmount);
+    const items = itemsBySale.get(sale.id) ?? [];
+    const noOrder = items.length === 0;
     return {
       id: sale.id,
       saleDate: sale.saleDate,
@@ -173,9 +175,9 @@ export default async function CustomerProfilePage({
       paid,
       pending: Math.max(0, total - paid),
       advance: Math.max(0, paid - total),
-      status: status(total, paid),
+      status: noOrder ? "No Order" : status(total, paid),
       note: sale.note,
-      items: (itemsBySale.get(sale.id) ?? []).map((item) => ({
+      items: items.map((item) => ({
         name: item.productName,
         size: item.productSize,
         boxes: item.boxes,
@@ -199,7 +201,7 @@ export default async function CustomerProfilePage({
           <Link href="/customers"><ArrowLeft /> All Customers</Link>
         </Button>
       </div>
-      <PageHeader title={referenceSale.customerName} description="Complete customer sales and payment history." />
+      <PageHeader title={referenceSale.customerName} description="Complete customer orders, visits and payment history." />
       <div className="mb-4 flex justify-end">
         <CustomerProfilePdf
           customer={{
@@ -247,7 +249,7 @@ export default async function CustomerProfilePage({
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Orders · boxes</p>
+            <p className="text-xs text-muted-foreground">Orders / visits · boxes</p>
             <p className="mt-1 font-semibold">{customerSales.length} · {totalBoxes}</p>
           </div>
         </CardContent>
@@ -264,6 +266,7 @@ export default async function CustomerProfilePage({
           const salePayments = paymentsBySale.get(sale.id) ?? [];
           const total = Number(sale.totalAmount);
           const paid = Number(sale.paidAmount);
+          const noOrder = items.length === 0;
           const pending = Math.max(0, total - paid);
           const advance = Math.max(0, paid - total);
           let runningPaid = 0;
@@ -283,52 +286,58 @@ export default async function CustomerProfilePage({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                    Sale · {dateLabel(sale.saleDate)}
+                    {noOrder ? "Visit" : "Sale"} · {dateLabel(sale.saleDate)}
                   </CardTitle>
-                  <Badge variant={saleStatus === "Paid" ? "secondary" : saleStatus === "Partial" ? "outline" : "destructive"}>
-                    {saleStatus}
-                  </Badge>
+                  {noOrder ? <Badge variant="outline">No Order</Badge> : (
+                    <Badge variant={saleStatus === "Paid" ? "secondary" : saleStatus === "Partial" ? "outline" : "destructive"}>
+                      {saleStatus}
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Items delivered
+                    {noOrder ? "Visit result" : "Items delivered"}
                   </h3>
-                  {items.length ? (
-                    <div className="overflow-x-auto rounded-xl border border-border">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
-                            <th className="px-3 py-2 font-medium">Item</th>
-                            <th className="px-3 py-2 text-right font-medium">Boxes</th>
-                            <th className="px-3 py-2 text-right font-medium">Rate</th>
-                            <th className="px-3 py-2 text-right font-medium">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {items.map((item, index) => (
-                            <tr key={`${sale.id}-${item.productName}-${index}`} className="border-t border-border">
-                              <td className="px-3 py-2">{item.productName} · {item.productSize}</td>
-                              <td className="px-3 py-2 text-right">{item.boxes}</td>
-                              <td className="px-3 py-2 text-right">{money(Number(item.ratePerBox))}</td>
-                              <td className="px-3 py-2 text-right">{money(item.boxes * Number(item.ratePerBox))}</td>
+                  {noOrder ? <p className="text-sm text-muted-foreground">Shop visit recorded — no order was placed.</p> : null}
+                  {!noOrder ? (
+                    items.length ? (
+                      <div className="overflow-x-auto rounded-xl border border-border">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-muted/50 text-left text-xs text-muted-foreground">
+                              <th className="px-3 py-2 font-medium">Item</th>
+                              <th className="px-3 py-2 text-right font-medium">Boxes</th>
+                              <th className="px-3 py-2 text-right font-medium">Rate</th>
+                              <th className="px-3 py-2 text-right font-medium">Amount</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No item details recorded for this sale.</p>
-                  )}
+                          </thead>
+                          <tbody>
+                            {items.map((item, index) => (
+                              <tr key={`${sale.id}-${item.productName}-${index}`} className="border-t border-border">
+                                <td className="px-3 py-2">{item.productName} · {item.productSize}</td>
+                                <td className="px-3 py-2 text-right">{item.boxes}</td>
+                                <td className="px-3 py-2 text-right">{money(Number(item.ratePerBox))}</td>
+                                <td className="px-3 py-2 text-right">{money(item.boxes * Number(item.ratePerBox))}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No item details recorded for this sale.</p>
+                    )
+                  ) : null}
                   <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm">
                     <span className="text-muted-foreground">
-                      Delivered by {staffNames.get(sale.deliveredBy) ?? "—"}
+                    {noOrder ? "Visited by" : "Delivered by"} {staffNames.get(sale.deliveredBy) ?? "—"}
                     </span>
-                    <span className="font-semibold">Sale total: {money(total)}</span>
+                    {!noOrder ? <span className="font-semibold">Sale total: {money(total)}</span> : null}
                   </div>
                 </div>
 
+                {!noOrder ? (
                 <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
                   <div>
                     <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -375,17 +384,18 @@ export default async function CustomerProfilePage({
                     </div>
                   </div>
                 </div>
+                ) : null}
 
                 {sale.note ? (
                   <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
                     Sale note: {sale.note}
                   </p>
                 ) : null}
-                <Button asChild variant="outline" className="w-full sm:w-auto">
+                {!noOrder ? <Button asChild variant="outline" className="w-full sm:w-auto">
                   <Link href={`/bill/${sale.id}`}>
                     <ReceiptText className="h-4 w-4" /> Generate Bill
                   </Link>
-                </Button>
+                </Button> : null}
               </CardContent>
             </Card>
           );

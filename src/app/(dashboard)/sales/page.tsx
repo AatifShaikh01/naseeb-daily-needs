@@ -64,7 +64,12 @@ export default async function SalesPage({
   if (params.q?.trim()) conds.push(ilike(sales.customerName, `%${params.q.trim()}%`));
   if (params.staff) conds.push(eq(sales.deliveredBy, Number(params.staff)));
   if (params.status === "paid" || params.status === "pending" || params.status === "partial")
-    conds.push(eq(sales.paymentStatus, params.status));
+    conds.push(
+      and(
+        eq(sales.paymentStatus, params.status),
+        sql`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
+      )!,
+    );
   if (params.approval === "pending" || params.approval === "approved" || params.approval === "declined")
     conds.push(eq(sales.approvalStatus, params.approval));
   if (isStaffSession(session)) {
@@ -205,7 +210,7 @@ export default async function SalesPage({
               <Link href="/sales">Clear</Link>
             </Button>
           ) : null}
-          <span className="ml-auto text-sm text-muted-foreground">{cards.length} sale{cards.length === 1 ? "" : "s"}</span>
+          <span className="ml-auto text-sm text-muted-foreground">{cards.length} record{cards.length === 1 ? "" : "s"}</span>
         </div>
       </form>
 

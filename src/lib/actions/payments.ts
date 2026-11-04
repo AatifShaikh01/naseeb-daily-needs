@@ -1,10 +1,10 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { db, payments, sales } from "@/db";
+import { db, payments, saleItems, sales } from "@/db";
 import { todayIST } from "@/lib/dates";
 import { customerPaymentSchema, firstError, salePaymentSchema } from "@/lib/validation";
 import { getSession } from "./auth";
@@ -46,11 +46,13 @@ export async function recordSalePaymentAction(
       paidAmount: sales.paidAmount,
       staffId: sales.staffId,
       deliveredBy: sales.deliveredBy,
+      hasItems: sql<boolean>`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
     })
     .from(sales)
     .where(eq(sales.id, saleId));
   if (!sale) return { error: "Sale not found." };
   if (!isSaleRelatedToStaff(sale, session)) return { error: "You can only collect payments for your related sales." };
+  if (!sale.hasItems) return { error: "Cannot record a payment for a No Order visit." };
 
   const total = Number(sale.totalAmount);
   const cur = Number(sale.paidAmount);
@@ -109,12 +111,14 @@ export async function recordCustomerPaymentAction(
       deliveredBy: sales.deliveredBy,
       totalAmount: sales.totalAmount,
       paidAmount: sales.paidAmount,
+      hasItems: sql<boolean>`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
     })
     .from(sales);
   const tn = normName(customerName);
   const tp = normPhone(customerPhone);
   const mine = all
     .filter((s) => normName(s.customerName) === tn && normPhone(s.customerPhone) === tp)
+    .filter((s) => s.hasItems)
     .filter((s) => isSaleRelatedToStaff(s, session))
     .sort((a, b) => (a.saleDate < b.saleDate ? -1 : a.saleDate > b.saleDate ? 1 : a.id - b.id));
 

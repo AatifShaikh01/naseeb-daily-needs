@@ -1,4 +1,4 @@
-import { ContactRound, FileText, KeyRound, Landmark, MoreHorizontal, Package, PackagePlus, Receipt, Settings, UsersRound } from "lucide-react";
+import { CalendarDays, ContactRound, FileText, KeyRound, Landmark, MoreHorizontal, Package, PackagePlus, Receipt, Settings, UsersRound } from "lucide-react";
 import Link from "next/link";
 
 import { logoutAction } from "@/lib/actions/auth";
@@ -27,6 +27,12 @@ const MORE_LINKS = [
     title: "Sales",
     href: "/sales",
     description: "View, filter and edit all recorded sales.",
+  },
+  {
+    icon: CalendarDays,
+    title: "Daily Staff Report",
+    href: "/staff/daily",
+    description: "See each day's sales, customers, deliveries and payments by staff member.",
   },
   {
     icon: UsersRound,

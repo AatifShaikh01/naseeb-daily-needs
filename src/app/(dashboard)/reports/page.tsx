@@ -29,6 +29,7 @@ export default async function ReportsPage({
     ["Stock In Boxes", daily.stockInBoxes],
     ["Sales Boxes", daily.salesBoxes],
     ["Sales Count", daily.salesCount],
+    ["No Order Visits", daily.noOrderCount],
     ["Sales Amount (₹)", daily.salesAmount],
     ["Payments Received (₹)", daily.paymentsReceived],
     ["Pending at Date (₹)", daily.pendingAtDate],
@@ -107,10 +108,7 @@ export default async function ReportsPage({
                 </div>
               </CardHeader>
               <CardContent>
-                {daily.stockInRows.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No stock-in records for this date.</p>
-                ) : (
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">Stock In Boxes</span>
                       <span className="tabular-nums">{daily.stockInBoxes}</span>
@@ -124,6 +122,10 @@ export default async function ReportsPage({
                       <span className="tabular-nums">{daily.salesCount}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">No Order Visits</span>
+                      <span className="tabular-nums">{daily.noOrderCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">Sales Amount</span>
                       <span className="tabular-nums">₹{daily.salesAmount.toLocaleString("en-IN")}</span>
                     </div>
@@ -135,8 +137,7 @@ export default async function ReportsPage({
                       <span className="font-medium text-destructive">Pending at Date</span>
                       <span className="tabular-nums text-destructive">₹{daily.pendingAtDate.toLocaleString("en-IN")}</span>
                     </div>
-                  </div>
-                )}
+                </div>
 
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <h3 className="text-sm font-semibold mb-2">Stock In Detail (Date)</h3>
@@ -170,6 +171,7 @@ export default async function ReportsPage({
                       stockInBoxes: daily.stockInBoxes,
                       salesBoxes: daily.salesBoxes,
                       salesCount: daily.salesCount,
+                      noOrderCount: daily.noOrderCount,
                       salesAmount: daily.salesAmount,
                       paymentsReceived: daily.paymentsReceived,
                       pendingAtDate: daily.pendingAtDate,

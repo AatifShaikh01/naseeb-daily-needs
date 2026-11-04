@@ -51,6 +51,7 @@ export const saleItemSchema = z.object({
 
 /** Sale create form ke liye. */
 export const saleSchema = z.object({
+  outcome: z.enum(["order", "no_order"]),
   saleDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   customerName: z.string().trim().min(1, "Enter the customer name").max(100),
   customerPhone: z
@@ -62,7 +63,14 @@ export const saleSchema = z.object({
   paidAmount: z.coerce.number().min(0, "Amount cannot be negative").max(100000000),
   paymentMode: z.enum(["cash", "upi", "bank"]).optional().default("cash"),
   note: z.union([z.literal(""), z.string().trim().max(300)]).nullable().optional(),
-  items: z.array(saleItemSchema).min(1, "Add at least one product").max(100, "Max 100 rows"),
+  items: z.array(saleItemSchema).max(100, "Max 100 rows"),
+}).superRefine((sale, ctx) => {
+  if (sale.outcome === "order" && sale.items.length === 0) {
+    ctx.addIssue({ code: "custom", message: "Add at least one product for an order", path: ["items"] });
+  }
+  if (sale.outcome === "no_order" && sale.items.length > 0) {
+    ctx.addIssue({ code: "custom", message: "A no-order visit cannot include items", path: ["items"] });
+  }
 });
 
 /** Sale edit form ke liye (same fields). */

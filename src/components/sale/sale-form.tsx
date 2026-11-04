@@ -36,6 +36,7 @@ const inputCls =
 
 export type InitialSale = {
   id: number;
+  outcome: "order" | "no_order";
   saleDate: string;
   customerName: string;
   customerPhone: string | null;
@@ -95,6 +96,7 @@ function SaleFormFields({
   /* header */
   const [saleDate, setSaleDate] = useState(sale?.saleDate ?? today);
   const [deliveredBy, setDeliveredBy] = useState<number>(sale?.deliveredBy ?? staff[0]?.id ?? 0);
+  const [outcome, setOutcome] = useState<"order" | "no_order">(sale?.outcome ?? "order");
 
   /* items */
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
@@ -229,20 +231,50 @@ function SaleFormFields({
 
   /* hidden payload */
   const itemsPayload = JSON.stringify(
-    rows
-      .filter((r) => r.productId > 0 && r.boxes >= 1)
-      .map((r) => ({ productId: r.productId, boxes: r.boxes, ratePerBox: Number(r.rateText) || 0 })),
+    outcome === "order"
+      ? rows
+          .filter((r) => r.productId > 0 && r.boxes >= 1)
+          .map((r) => ({ productId: r.productId, boxes: r.boxes, ratePerBox: Number(r.rateText) || 0 }))
+      : [],
   );
 
   return (
     <form action={formAction} className="space-y-5">
       {editing ? <input type="hidden" name="id" value={sale!.id} /> : null}
+      <input type="hidden" name="outcome" value={outcome} />
       <input type="hidden" name="items" value={itemsPayload} />
       <input type="hidden" name="saleDate" value={saleDate} />
       <input type="hidden" name="deliveredBy" value={deliveredBy} />
       <input type="hidden" name="paymentStatus" value={status} />
       <input type="hidden" name="paidAmount" value={status === "partial" ? paidInput : status === "paid" ? totalAmount : 0} />
       <input type="hidden" name="note" value={note} />
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Visit result</p>
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            ["order", "Order"],
+            ["no_order", "No order"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setOutcome(value)}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                outcome === value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
+              aria-pressed={outcome === value}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {outcome === "no_order" ? (
+          <p className="text-xs text-muted-foreground">Record the shop visit even when no order was placed.</p>
+        ) : null}
+      </div>
 
       {/* Date */}
       <div className="space-y-1.5">
@@ -297,7 +329,7 @@ function SaleFormFields({
 
       {/* Delivered By — chips */}
       <div className="space-y-2">
-        <p className="text-sm font-medium">Delivered By</p>
+        <p className="text-sm font-medium">{outcome === "order" ? "Delivered By" : "Visited By"}</p>
         <div className="flex flex-wrap gap-2">
           {staff.map((s) => (
             <button
@@ -316,7 +348,8 @@ function SaleFormFields({
         </div>
       </div>
 
-      {/* Items */}
+      {outcome === "order" ? (
+      <>
       <div className="space-y-2">
         <p className="text-sm font-medium">Items ({rows.length})</p>
         <div ref={listRef} className="space-y-3">
@@ -444,6 +477,8 @@ function SaleFormFields({
           </div>
         ) : null}
       </div>
+      </>
+      ) : null}
 
       {/* Note */}
       <div className="space-y-1.5">
@@ -458,12 +493,10 @@ function SaleFormFields({
         </p>
       ) : null}
 
-      <Button type="submit" disabled={pending} className="w-full" size="lg">
+      <Button type="submit" disabled={pending || (outcome === "order" && products.length === 0)} className="w-full" size="lg">
         {pending ? <Loader2 className="animate-spin" /> : null}
-        Save Sale
+        {outcome === "order" ? "Save Order" : "Save No Order"}
       </Button>
     </form>
   );
 }
-
-

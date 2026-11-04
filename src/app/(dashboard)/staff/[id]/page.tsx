@@ -60,7 +60,12 @@ export default async function StaffProfilePage({
         paidAmount: sales.paidAmount,
       })
       .from(sales)
-      .where(and(eq(sales.staffId, staffId), gte(sales.saleDate, monthStart), lte(sales.saleDate, monthEnd)))
+      .where(and(
+        eq(sales.staffId, staffId),
+        gte(sales.saleDate, monthStart),
+        lte(sales.saleDate, monthEnd),
+        sql`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
+      ))
       .orderBy(desc(sales.saleDate), desc(sales.id)),
     db
       .select({
@@ -69,7 +74,12 @@ export default async function StaffProfilePage({
       })
       .from(sales)
       .leftJoin(saleItems, eq(saleItems.saleId, sales.id))
-      .where(and(eq(sales.deliveredBy, staffId), gte(sales.saleDate, monthStart), lte(sales.saleDate, monthEnd)))
+      .where(and(
+        eq(sales.deliveredBy, staffId),
+        gte(sales.saleDate, monthStart),
+        lte(sales.saleDate, monthEnd),
+        sql`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
+      ))
       .groupBy(sales.id),
     db
       .select({
@@ -93,6 +103,7 @@ export default async function StaffProfilePage({
         totalAmount: sales.totalAmount,
         paidAmount: sales.paidAmount,
         paymentStatus: sales.paymentStatus,
+        hasItems: sql<boolean>`exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id})`,
       })
       .from(sales)
       .where(eq(sales.staffId, staffId))
@@ -228,7 +239,7 @@ export default async function StaffProfilePage({
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Recent sales</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Recent visits and sales</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {recentSales.length ? recentSales.map((sale) => (
               <Link
@@ -241,8 +252,12 @@ export default async function StaffProfilePage({
                   <span className="text-xs text-muted-foreground">{sale.saleDate}</span>
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="block text-sm font-semibold">{money(Number(sale.totalAmount))}</span>
-                  <span className="text-xs text-muted-foreground capitalize">{sale.paymentStatus}</span>
+                  {sale.hasItems ? (
+                    <>
+                      <span className="block text-sm font-semibold">{money(Number(sale.totalAmount))}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{sale.paymentStatus}</span>
+                    </>
+                  ) : <span className="text-xs text-muted-foreground">No Order</span>}
                 </span>
               </Link>
             )) : (

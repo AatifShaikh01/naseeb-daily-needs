@@ -52,6 +52,7 @@ export async function createSaleAction(
 
   const items = parseItems(formData.get("items"));
   const parsed = saleSchema.safeParse({
+    outcome: formData.get("outcome"),
     saleDate: formData.get("saleDate") ?? todayIST(),
     customerName: formData.get("customerName"),
     customerPhone: String(formData.get("customerPhone") ?? "").trim() || null,
@@ -64,10 +65,11 @@ export async function createSaleAction(
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { saleDate, customerName, customerPhone, deliveredBy: inputDeliveredBy, paymentStatus, paidAmount, paymentMode, note } =
+  const { outcome, saleDate, customerName, customerPhone, deliveredBy: inputDeliveredBy, paymentStatus, paidAmount, paymentMode, note } =
     parsed.data;
   const deliveredBy = isStaffSession(session) ? session.uid : inputDeliveredBy;
   const { totalRounded, paid } = resolveAmounts(items, paymentStatus, Number(paidAmount));
+  const effectivePaymentStatus = outcome === "no_order" ? "pending" : paymentStatus;
 
   const [row] = await db
     .insert(sales)
@@ -77,7 +79,7 @@ export async function createSaleAction(
       customerName,
       customerPhone,
       deliveredBy,
-      paymentStatus,
+      paymentStatus: effectivePaymentStatus,
       approvalStatus: isAdminSession(session) ? "approved" : "pending",
       totalAmount: totalRounded.toFixed(2),
       paidAmount: paid.toFixed(2),
@@ -86,14 +88,16 @@ export async function createSaleAction(
     })
     .returning({ id: sales.id });
 
-  await db.insert(saleItems).values(
-    items.map((it) => ({
-      saleId: row.id,
-      productId: it.productId,
-      boxes: it.boxes,
-      ratePerBox: it.ratePerBox.toFixed(2),
-    })),
-  );
+  if (items.length) {
+    await db.insert(saleItems).values(
+      items.map((it) => ({
+        saleId: row.id,
+        productId: it.productId,
+        boxes: it.boxes,
+        ratePerBox: it.ratePerBox.toFixed(2),
+      })),
+    );
+  }
 
   if (paid > 0) {
     await db.insert(payments).values({
@@ -110,6 +114,8 @@ export async function createSaleAction(
   revalidatePath("/sales");
   revalidatePath("/pending");
   revalidatePath("/stock");
+  revalidatePath("/staff/daily");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -126,6 +132,7 @@ export async function updateSaleAction(
 
   const items = parseItems(formData.get("items"));
   const parsed = saleSchema.safeParse({
+    outcome: formData.get("outcome"),
     saleDate: formData.get("saleDate") ?? todayIST(),
     customerName: formData.get("customerName"),
     customerPhone: String(formData.get("customerPhone") ?? "").trim() || null,
@@ -138,9 +145,19 @@ export async function updateSaleAction(
   });
   if (!parsed.success) return { error: firstError(parsed.error) };
 
-  const { saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, paymentMode, note } =
+  const { outcome, saleDate, customerName, customerPhone, deliveredBy, paymentStatus, paidAmount, paymentMode, note } =
     parsed.data;
   const { totalRounded, paid } = resolveAmounts(items, paymentStatus, Number(paidAmount));
+  if (outcome === "no_order") {
+    const [existingPayment] = await db
+      .select({ id: payments.id })
+      .from(payments)
+      .where(eq(payments.saleId, id))
+      .limit(1);
+    if (existingPayment) {
+      return { error: "This order has payment history and cannot be changed to No order." };
+    }
+  }
 
   await db
     .update(sales)
@@ -149,7 +166,7 @@ export async function updateSaleAction(
       customerName,
       customerPhone,
       deliveredBy,
-      paymentStatus,
+      paymentStatus: outcome === "no_order" ? "pending" : paymentStatus,
       totalAmount: totalRounded.toFixed(2),
       paidAmount: paid.toFixed(2),
       paymentMode,
@@ -158,14 +175,16 @@ export async function updateSaleAction(
     .where(eq(sales.id, id));
 
   await db.delete(saleItems).where(eq(saleItems.saleId, id));
-  await db.insert(saleItems).values(
-    items.map((it) => ({
-      saleId: id,
-      productId: it.productId,
-      boxes: it.boxes,
-      ratePerBox: it.ratePerBox.toFixed(2),
-    })),
-  );
+  if (items.length) {
+    await db.insert(saleItems).values(
+      items.map((it) => ({
+        saleId: id,
+        productId: it.productId,
+        boxes: it.boxes,
+        ratePerBox: it.ratePerBox.toFixed(2),
+      })),
+    );
+  }
 
   // Payments sync — sirf auto-created rows (sale-time) update; pending page ki
   // manual collections untouched rehti hain.
@@ -195,6 +214,8 @@ export async function updateSaleAction(
   revalidatePath("/sales");
   revalidatePath("/pending");
   revalidatePath("/stock");
+  revalidatePath("/staff/daily");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -210,6 +231,8 @@ export async function deleteSaleAction(formData: FormData): Promise<ActionResult
   revalidatePath("/sale");
   revalidatePath("/pending");
   revalidatePath("/stock");
+  revalidatePath("/staff/daily");
+  revalidatePath("/");
   return { ok: true };
 }
 

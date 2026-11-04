@@ -54,13 +54,9 @@ export default async function SalePage() {
     <>
       <PageHeader
         title="New Sale"
-        description="Record a sale — customer, items, and payment in one go."
+        description="Record a shop visit as an order or no order."
       />
-      {productRows.length === 0 ? (
-        <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          Add a product first before recording a sale.
-        </p>
-      ) : staffRows.length === 0 ? (
+      {staffRows.length === 0 ? (
         <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
           Add staff in Settings first.
         </p>

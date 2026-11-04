@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { and, asc, count, gte, lte, sql } from "drizzle-orm";
+import { and, asc, gte, lte, sql } from "drizzle-orm";
 import { ArrowRight, UserRound } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { db, sales, staff } from "@/db";
+import { db, saleItems, sales, staff } from "@/db";
 import { requireAdmin } from "@/lib/authorization";
 import { todayIST } from "@/lib/dates";
 
@@ -36,7 +36,7 @@ export default async function StaffSalesPage() {
     db
       .select({
         staffId: sales.staffId,
-        billCount: count(sales.id),
+        billCount: sql<number>`count(*) filter (where exists (select 1 from ${saleItems} where ${saleItems.saleId} = ${sales.id}))`,
         totalAmount: sql<string>`coalesce(sum(${sales.totalAmount}), 0)`,
       })
       .from(sales)

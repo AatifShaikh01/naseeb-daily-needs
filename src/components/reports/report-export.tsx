@@ -192,6 +192,7 @@ type DailySummary = {
   stockInBoxes: number;
   salesBoxes: number;
   salesCount: number;
+  noOrderCount: number;
   salesAmount: number;
   paymentsReceived: number;
   pendingAtDate: number;
@@ -263,7 +264,7 @@ export function DailyPdfExport({
         ],
         [
           ["Sales Boxes", String(summary.salesBoxes)],
-          ["Sales Count", String(summary.salesCount)],
+          ["Orders / No Orders", `${summary.salesCount} / ${summary.noOrderCount}`],
           ["Stock In Boxes", String(summary.stockInBoxes)],
         ],
       ];

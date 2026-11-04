@@ -77,7 +77,7 @@ export function CustomerDirectory({ customers }: { customers: CustomerSummary[] 
                     <span className="min-w-0">
                       <span className="block truncate font-semibold">{customer.name}</span>
                       <span className="block text-sm text-muted-foreground">
-                        {customer.phone || "No phone"} · {customer.saleCount} sale{customer.saleCount === 1 ? "" : "s"}
+                        {customer.phone || "No phone"} · {customer.saleCount} visit{customer.saleCount === 1 ? "" : "s"}
                       </span>
                     </span>
                   </div>

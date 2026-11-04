@@ -77,6 +77,7 @@ export async function getBillData(saleId: number): Promise<BillData | null> {
       .orderBy(asc(payments.paidOn), asc(payments.id)),
     getBillBranding(),
   ]);
+  if (items.length === 0) return null;
 
   const productIds = items.map((i) => i.productId);
   let productMap = new Map<number, { name: string; size: string }>();

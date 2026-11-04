@@ -75,9 +75,10 @@ export function SaleCard({
   const [reviewing, setReviewing] = useState(false);
 
   const totalBoxes = sale.items.reduce((s, it) => s + it.boxes, 0);
+  const noOrder = sale.items.length === 0;
   const itemsSummary = sale.items
     .map((it) => `${it.boxes} × ${it.productName} ${it.productSize}`)
-    .join(", ");
+    .join(", ") || (noOrder ? "No order placed" : "—");
 
   async function onDelete() {
     setDeleting(true);
@@ -112,6 +113,7 @@ export function SaleCard({
   function toInitial(): InitialSale {
     return {
       id: sale.id,
+      outcome: noOrder ? "no_order" : "order",
       saleDate: sale.saleDate,
       customerName: sale.customerName,
       customerPhone: sale.customerPhone,
@@ -138,7 +140,7 @@ export function SaleCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-semibold">{sale.customerName}</p>
-            <StatusBadge status={sale.paymentStatus} />
+            {noOrder ? <Badge variant="outline">No Order</Badge> : <StatusBadge status={sale.paymentStatus} />}
             <Badge className={
               sale.approvalStatus === "approved"
                 ? "bg-emerald-100 text-emerald-700"
@@ -153,7 +155,7 @@ export function SaleCard({
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {formatDate(sale.saleDate)}
-            {sale.customerPhone ? ` · ${sale.customerPhone}` : ""} · by {staffName}
+            {sale.customerPhone ? ` · ${sale.customerPhone}` : ""} · {noOrder ? "visited by" : "by"} {staffName}
           </p>
           <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">{itemsSummary || "—"}</p>
         </div>
@@ -173,7 +175,7 @@ export function SaleCard({
       {/* Expanded detail */}
       {expanded ? (
         <div className="mt-3 space-y-3 border-t border-border pt-3">
-          <div className="space-y-1.5">
+          {!noOrder ? <div className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Items</p>
             <ul className="space-y-1 text-sm">
               {sale.items.map((it, i) => (
@@ -187,19 +189,27 @@ export function SaleCard({
                 </li>
               ))}
             </ul>
-          </div>
+          </div> : (
+            <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+              Shop visit recorded — no order was placed.
+            </p>
+          )}
 
-          <div className="flex justify-between text-sm font-semibold">
-            <span>Total</span>
-            <span>{money(sale.totalAmount)}</span>
-          </div>
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Paid</span>
-            <span>{money(sale.paidAmount)}</span>
-          </div>
+          {!noOrder ? (
+            <>
+              <div className="flex justify-between text-sm font-semibold">
+                <span>Total</span>
+                <span>{money(sale.totalAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Paid</span>
+                <span>{money(sale.paidAmount)}</span>
+              </div>
+            </>
+          ) : null}
 
           {/* Payment history */}
-          <div className="space-y-1.5">
+          {!noOrder ? <div className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payments</p>
             {sale.payments.length === 0 ? (
               <p className="text-sm text-muted-foreground">No payments recorded.</p>
@@ -215,7 +225,7 @@ export function SaleCard({
                 ))}
               </ul>
             )}
-          </div>
+          </div> : null}
 
           {sale.note ? (
             <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">{sale.note}</p>
@@ -236,9 +246,11 @@ export function SaleCard({
             <Button asChild variant="outline" size="sm">
               <Link href={`/customers/${sale.id}`}><UserRound /> Customer Profile</Link>
             </Button>
-            <a href={`/bill/${sale.id}`} className="rounded-xl border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5">
-              <Receipt className="mr-1 h-3 w-3" /> Generate Bill
-            </a>
+            {!noOrder ? (
+              <a href={`/bill/${sale.id}`} className="rounded-xl border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5">
+                <Receipt className="mr-1 h-3 w-3" /> Generate Bill
+              </a>
+            ) : null}
             {canEdit ? (
               <>
                 <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
