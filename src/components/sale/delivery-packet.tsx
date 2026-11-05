@@ -135,10 +135,9 @@ async function buildDeliveryPacket(sales: PacketSale[], date: string): Promise<B
       sale.customerName,
       ...quantities.map((quantity) => quantity ? String(quantity) : "—"),
       String(quantities.reduce((sum, quantity) => sum + quantity, 0)),
-      "",
     ];
   });
-  loadRows.push(["", "TOTAL LOAD", ...loadTotals.map(String), String(totalBoxes), ""]);
+  loadRows.push(["", "TOTAL LOAD", ...loadTotals.map(String), String(totalBoxes)]);
 
   doc.addPage("a4", "landscape");
   packetHeading(doc, sales[0].branding.businessName, "VEHICLE LOAD SHEET", formatDate(date));
@@ -146,11 +145,11 @@ async function buildDeliveryPacket(sales: PacketSale[], date: string): Promise<B
   doc.setFontSize(10);
   doc.setTextColor(40, 40, 40);
   doc.text(`Customers: ${sales.length}     Total boxes to load: ${totalBoxes}`, 30, 74);
-  const fixedWidth = 28 + 130 + 48 + 28;
+  const fixedWidth = 28 + 130 + 48;
   const productWidth = Math.max(34, Math.min(74, (pageWidth - 60 - fixedWidth) / Math.max(1, productLabels.length)));
   autoTable(doc, {
     startY: 84,
-    head: [["#", "Customer", ...productLabels, "Total boxes", "Loaded ✓"]],
+    head: [["#", "Customer", ...productLabels, "Total boxes"]],
     body: loadRows,
     theme: "grid",
     styles: { font: "helvetica", fontSize: 8, cellPadding: 4, minCellHeight: 23, textColor: [35, 35, 35], halign: "center" },
@@ -160,19 +159,9 @@ async function buildDeliveryPacket(sales: PacketSale[], date: string): Promise<B
       1: { cellWidth: 130, halign: "left" },
       ...Object.fromEntries(productLabels.map((_, index) => [index + 2, { cellWidth: productWidth }])),
       [productLabels.length + 2]: { cellWidth: 48 },
-      [productLabels.length + 3]: { cellWidth: 60 },
     },
     horizontalPageBreak: true,
     horizontalPageBreakRepeat: [0, 1],
-    didDrawCell: (data) => {
-      if (
-        data.section === "body" &&
-        data.column.index === productLabels.length + 3 &&
-        data.row.index < sales.length
-      ) {
-        drawCheckbox(doc, data.cell.x + data.cell.width / 2 - 4.5, data.cell.y + data.cell.height / 2 - 4.5);
-      }
-    },
     margin: { left: 30, right: 30, bottom: 30 },
   });
 

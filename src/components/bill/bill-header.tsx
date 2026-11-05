@@ -23,14 +23,14 @@ export function BillHeader({
     minimal
       ? "mb-8 flex min-w-0 flex-col items-center gap-3 border-b-2 pb-5 text-center"
       : branding.template === "modern"
-        ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-xl border border-border/70 border-l-4 bg-muted/40 p-3 sm:gap-5 sm:p-5"
+        ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(108px,24%)] items-center gap-3 overflow-hidden rounded-xl border border-border/70 border-l-4 bg-muted/40 p-3 sm:gap-5 sm:p-5"
         : bold
-          ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-xl p-3 sm:gap-5 sm:p-5"
+          ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(108px,24%)] items-center gap-3 overflow-hidden rounded-xl p-3 sm:gap-5 sm:p-5"
           : branding.template === "elegant"
-            ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-y-2 py-4 sm:gap-5"
+            ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(108px,24%)] items-center gap-3 border-y-2 py-4 sm:gap-5"
             : branding.template === "split"
-              ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b-2 pb-4 sm:gap-5"
-              : "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b-2 pb-4 sm:gap-5";
+              ? "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(108px,24%)] items-center gap-3 border-b-2 pb-4 sm:gap-5"
+              : "mb-8 grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(108px,24%)] items-center gap-3 border-b-2 pb-4 sm:gap-5";
   const details = [
     branding.businessPhone,
     branding.businessAddress,
@@ -72,7 +72,7 @@ export function BillHeader({
         </div>
       </div>
       <div
-        className={`min-w-0 max-w-[38%] text-right ${minimal ? "rounded-lg px-3 py-2" : "rounded-lg px-2 py-2 sm:px-3"} ${split ? "" : bold ? "border border-white/20" : "border border-border/70 bg-white/70"}`}
+        className={`min-w-0 text-right ${minimal ? "mx-auto w-full max-w-[220px]" : "w-full"} ${minimal ? "rounded-lg px-3 py-2" : "rounded-lg px-2 py-2 sm:px-3"} ${split ? "" : bold ? "border border-white/20" : "border border-border/70 bg-white/70"}`}
         style={split ? { backgroundColor: branding.color, color: getBillContrastColor(branding.color) } : undefined}
       >
         <p
@@ -82,7 +82,7 @@ export function BillHeader({
           {branding.billTitle || "Invoice"}
         </p>
         <p
-          className={`break-all text-sm font-bold leading-tight sm:text-xl ${bold || split ? "" : "text-foreground"}`}
+          className={`break-all text-xs font-bold leading-tight sm:text-sm ${bold || split ? "" : "text-foreground"}`}
           style={bold || split ? { color: split ? getBillContrastColor(branding.color) : textColor } : undefined}
         >
           {branding.billNumberPrefix.toUpperCase()}-{billNumber}
