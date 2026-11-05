@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { db, payments, products, purchaseItems, purchases, saleItems, sales, staff, stockIn } from "@/db";
 import { addDays, todayIST } from "@/lib/dates";
@@ -103,9 +103,10 @@ export async function getTodayActivity(today = todayIST()): Promise<ActivityItem
   if (saleIds.length > 0) {
     const itemRows = await db
       .select({ saleId: saleItems.saleId, boxes: saleItems.boxes })
-      .from(saleItems);
+      .from(saleItems)
+      .where(inArray(saleItems.saleId, saleIds));
     for (const it of itemRows) {
-      if (saleIds.includes(it.saleId)) boxesBySale.set(it.saleId, (boxesBySale.get(it.saleId) ?? 0) + it.boxes);
+      boxesBySale.set(it.saleId, (boxesBySale.get(it.saleId) ?? 0) + it.boxes);
     }
   }
 

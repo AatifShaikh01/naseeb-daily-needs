@@ -52,13 +52,17 @@ async function DashboardContent() {
   if (isStaffSession(session)) return <StaffDashboard staffId={session.uid} staffName={session.name} />;
 
   const today = todayIST();
-  const { totalSalesAmount, deliveredBoxes, salesAmount, totalPending } = await getTodaySummary(today);
-  const activity = await getTodayActivity(today);
-  const productStock = await getProductStock();
-  const salesData = await getLast7DaysSales(today);
-  const prev7Total = await getPrevious7DaysSales(today);
-  const staffDelivery = await getStaffDelivery(today);
-  const topPending = await getTopPendingCustomers(5);
+  const [summary, activity, productStock, salesData, prev7Total, staffDelivery, topPending] =
+    await Promise.all([
+      getTodaySummary(today),
+      getTodayActivity(today),
+      getProductStock(),
+      getLast7DaysSales(today),
+      getPrevious7DaysSales(today),
+      getStaffDelivery(today),
+      getTopPendingCustomers(5),
+    ]);
+  const { totalSalesAmount, deliveredBoxes, salesAmount, totalPending } = summary;
 
   const stats = [
     { label: "Total Sales (overall)", value: "₹" + totalSalesAmount.toLocaleString("en-IN"), icon: Package, accentClass: "bg-primary/10 text-primary", href: "/sales" },
