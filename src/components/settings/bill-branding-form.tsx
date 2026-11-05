@@ -219,17 +219,37 @@ export function BillBrandingForm({ branding }: { branding: BillBranding }) {
               className="sr-only"
               />
               <div
-                className="mb-2 rounded-md border bg-background p-2"
+                className={`mb-2 overflow-hidden rounded-md border bg-background p-2 ${
+                  template.id === "modern" ? "border-l-4" : ""
+                }`}
                 style={{ borderColor: template.id === draft.template ? draft.color : undefined }}
               >
-                <div
-                  className={`mb-2 h-2 rounded-sm ${
-                    template.id === "bold" ? "h-5" : template.id === "minimal" ? "mx-auto w-2/3" : ""
-                  }`}
-                  style={{ backgroundColor: draft.color }}
-                />
-                <div className="h-1 w-2/3 rounded bg-muted" />
-                <div className="mt-1 h-1 w-1/2 rounded bg-muted" />
+                <div className={`mb-2 flex items-center justify-between gap-2 ${template.id === "minimal" ? "flex-col" : ""}`}>
+                  <div className={`flex min-w-0 items-center gap-1.5 ${template.id === "minimal" ? "flex-col" : ""}`}>
+                    <div className="h-6 w-6 shrink-0 rounded-sm border bg-white" />
+                    <div className={template.id === "minimal" ? "text-center" : "min-w-0"}>
+                      <div className="h-1.5 w-16 max-w-full rounded bg-muted-foreground/70" />
+                      <div className="mt-1 h-1 w-12 max-w-full rounded bg-muted" />
+                    </div>
+                  </div>
+                  <div
+                    className="flex h-7 min-w-12 items-center justify-center rounded px-1.5"
+                    style={{ backgroundColor: template.id === "split" || template.id === "bold" ? draft.color : `${draft.color}18` }}
+                  >
+                    <div className="space-y-1">
+                      <div className="h-1 w-6 rounded bg-current opacity-50" />
+                      <div className="h-1.5 w-8 rounded bg-current opacity-80" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-1 grid grid-cols-2 gap-1">
+                  <div className="h-4 rounded-sm bg-muted/70" />
+                  <div className="h-4 rounded-sm bg-muted/70" />
+                </div>
+                <div className="space-y-1 border-t pt-1.5">
+                  <div className="h-1 w-full rounded bg-muted" />
+                  <div className="h-1 w-4/5 rounded bg-muted" />
+                </div>
               </div>
               <span className="block text-sm font-semibold">{template.name}</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">{template.description}</span>

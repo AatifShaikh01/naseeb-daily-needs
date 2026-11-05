@@ -49,94 +49,42 @@ export default async function BillPage({
           billNumber={String(bill.id).padStart(4, "0")}
         />
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-
-          <div>
-
-            <p className="text-xs font-semibold text-muted-foreground uppercase">
-
-              Date
-
-            </p>
-
-            <p className="text-sm text-foreground">{formatDate(bill.saleDate)}</p>
-
-          </div>
-
-          <div>
-
-            <p className="text-xs font-semibold text-muted-foreground uppercase">
-
-              Payment
-
-            </p>
-
-            <p className="text-sm text-foreground capitalize">
-
-              {bill.paymentMode}
-
-            </p>
-
-          </div>
-
+        <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3">
+          {[
+            ["Date", formatDate(bill.saleDate)],
+            ["Payment", bill.paymentMode],
+            ["Customer", bill.customerName],
+            ["Phone", bill.customerPhone ?? "—"],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="min-w-0 rounded-md border border-border/70 border-t-2 bg-muted/30 px-2.5 py-2 sm:px-3"
+              style={{ borderTopColor: branding.color }}
+            >
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p>
+              <p className="break-words text-xs font-medium capitalize text-foreground sm:text-sm">{value}</p>
+            </div>
+          ))}
         </div>
 
 
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-
-          <div>
-
-            <p className="text-xs font-semibold text-muted-foreground uppercase">
-
-              Customer
-
-            </p>
-
-            <p className="text-sm font-medium text-foreground">
-
-              {bill.customerName}
-
-            </p>
-
-          </div>
-
-          <div>
-
-            <p className="text-xs font-semibold text-muted-foreground uppercase">
-
-              Phone
-
-            </p>
-
-            <p className="text-sm text-foreground">
-
-              {bill.customerPhone ?? "—"}
-
-            </p>
-
-          </div>
-
-        </div>
-
-
-
-        <table className="w-full text-sm border-collapse mb-6">
+        <table className="mb-6 w-full table-fixed border-collapse text-sm">
 
           <thead>
 
             <tr
-              className="border-b text-left text-muted-foreground uppercase text-[11px]"
-              style={{ borderColor: branding.color }}
+              className="border-b text-left text-muted-foreground uppercase text-[10px] sm:text-[11px]"
+              style={{ borderColor: branding.color, backgroundColor: `${branding.color}14` }}
             >
 
-              <th className="py-3 pr-2 font-medium">Item</th>
+              <th className="w-[42%] py-3 pl-2 pr-1 font-medium">Item</th>
 
-              <th className="py-3 pr-2 font-medium text-right">Boxes</th>
+              <th className="w-[15%] px-1 py-3 text-right font-medium">Boxes</th>
 
-              <th className="py-3 pr-2 font-medium text-right">Rate (₹)</th>
+              <th className="w-[20%] px-1 py-3 text-right font-medium">Rate (₹)</th>
 
-              <th className="py-3 pr-2 font-medium text-right">Amount (₹)</th>
+              <th className="w-[23%] py-3 pl-1 pr-2 text-right font-medium">Amount (₹)</th>
 
             </tr>
 
@@ -146,23 +94,23 @@ export default async function BillPage({
 
             {bill.items.map((it) => (
 
-              <tr key={`${it.productName}-${it.productSize}`} className="text-left">
+              <tr key={`${it.productName}-${it.productSize}`} className="text-left even:bg-muted/20">
 
-                <td className="py-3 pr-2 text-foreground">
+                <td className="break-words py-3 pl-2 pr-1 text-foreground">
 
                   {it.productName}{it.productSize ? ` (${it.productSize})` : ""}
 
                 </td>
 
-                <td className="py-3 pr-2 text-right tabular-nums">{it.boxes}</td>
+                <td className="px-1 py-3 text-right tabular-nums">{it.boxes}</td>
 
-                <td className="py-3 pr-2 text-right tabular-nums text-muted-foreground">
+                <td className="px-1 py-3 text-right tabular-nums text-muted-foreground">
 
                   {money(it.ratePerBox)}
 
                 </td>
 
-                <td className="py-3 pr-2 text-right tabular-nums font-medium">
+                <td className="py-3 pl-1 pr-2 text-right tabular-nums font-medium">
 
                   {money(it.amount)}
 
@@ -172,15 +120,15 @@ export default async function BillPage({
 
             ))}
 
-            <tr className="border-t-2 pt-4" style={{ borderColor: branding.color }}>
+            <tr className="border-t-2 bg-muted/40" style={{ borderColor: branding.color }}>
 
-              <td className="py-2 pr-2 text-right font-bold text-foreground" colSpan={3}>
+              <td className="py-2 pl-2 pr-1 text-right font-bold text-foreground" colSpan={3}>
 
                 Total
 
               </td>
 
-              <td className="py-2 pr-2 text-right tabular-nums font-bold text-foreground">
+              <td className="py-2 pl-1 pr-2 text-right tabular-nums font-bold text-foreground">
 
                 {money(bill.totalAmount)}
 

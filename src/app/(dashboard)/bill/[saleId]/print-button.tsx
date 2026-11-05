@@ -41,7 +41,7 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       const green = accent;
       const grey: [number, number, number] = [110, 110, 110];
       const dark: [number, number, number] = [30, 30, 30];
-      const inverseHeader = bill.branding.template === "bold" || bill.branding.template === "split";
+      const inverseHeader = bill.branding.template === "bold";
       const titleHex =
         inverseHeader
           ? getBillContrastColor(bill.branding.color)
@@ -64,41 +64,53 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       let y = 52;
       const LOGO = 52;
       const minimal = bill.branding.template === "minimal";
-      const tx = minimal ? pageW / 2 : M + LOGO + 12;
-      const textWidth = minimal ? pageW - M * 2 - 130 : C - tx - 105;
+      const billColumnWidth = 124;
+      const tx = minimal ? pageW / 2 : M + LOGO + 14;
+      const textWidth = minimal
+        ? pageW - M * 2 - (billColumnWidth + 10) * 2
+        : C - tx - billColumnWidth - 18;
       const businessDetails = [
         bill.branding.businessPhone,
         bill.branding.businessAddress,
         bill.branding.gstin ? `GSTIN: ${bill.branding.gstin}` : "",
       ].filter(Boolean).join(" · ");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(19);
-      const nameLines = doc.splitTextToSize(bill.branding.businessName, textWidth);
+      doc.setFontSize(18);
+      const nameLines = doc.splitTextToSize(bill.branding.businessName || "Business name", textWidth);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10.5);
+      doc.setFontSize(9.5);
       const detailLines = businessDetails ? doc.splitTextToSize(businessDetails, textWidth) : [];
-      const contentY = minimal ? y + 34 : y - 6;
-      const detailsY = contentY + nameLines.length * 22;
-      const headerBottom = Math.max(
-        y + 42,
-        detailsY + detailLines.length * 13 + (minimal ? 12 : 0),
-      );
+      const contentY = minimal ? y + 34 : y - 7;
+      const detailsY = contentY + nameLines.length * 21;
+      const panelX = C - billColumnWidth;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const billTitleLines = doc.splitTextToSize(bill.branding.billTitle.toUpperCase(), billColumnWidth - 12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      const billNumberLines = doc.splitTextToSize(billNo, billColumnWidth - 12);
+      const billNumberY = y - 14 + billTitleLines.length * 12;
+      const billContentBottom = billNumberY + billNumberLines.length * 17 + 5;
+      const headerBottom = Math.max(y + 42, detailsY + detailLines.length * 12 + 7, billContentBottom);
 
       if (bill.branding.template === "bold") {
         doc.setFillColor(green[0], green[1], green[2]);
-        doc.roundedRect(M, y - 34, pageW - M * 2, headerBottom - y + 40, 8, 8, "F");
+        doc.roundedRect(M, y - 32, pageW - M * 2, headerBottom - y + 44, 8, 8, "F");
       } else if (bill.branding.template === "modern") {
-        doc.setFillColor(245, 248, 248);
-        doc.roundedRect(M, y - 30, pageW - M * 2, headerBottom - y + 36, 8, 8, "F");
+        doc.setFillColor(245, 248, 247);
+        doc.roundedRect(M, y - 30, pageW - M * 2, headerBottom - y + 42, 8, 8, "F");
         doc.setFillColor(green[0], green[1], green[2]);
-        doc.rect(M, y - 30, 5, headerBottom - y + 36, "F");
+        doc.rect(M, y - 30, 5, headerBottom - y + 42, "F");
       } else if (bill.branding.template === "elegant") {
         doc.setDrawColor(green[0], green[1], green[2]);
         doc.setLineWidth(0.7);
         doc.line(M, y - 30, C, y - 30);
       } else if (bill.branding.template === "split") {
         doc.setFillColor(green[0], green[1], green[2]);
-        doc.roundedRect(C - 112, y - 30, 112, 72, 8, 8, "F");
+        doc.roundedRect(panelX - 8, y - 28, billColumnWidth + 8, Math.max(68, headerBottom - y + 28), 7, 7, "F");
+      } else {
+        doc.setFillColor(green[0], green[1], green[2]);
+        doc.roundedRect(M, y - 30, pageW - M * 2, 3, 1, 1, "F");
       }
 
       try {
@@ -116,13 +128,23 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
           });
         }
         if (dataUrl) {
+          const logoX = minimal ? pageW / 2 - LOGO / 2 : M;
+          const logoY = y - 26;
+          doc.setFillColor(255, 255, 255);
+          doc.setDrawColor(229, 234, 232);
+          doc.roundedRect(logoX, logoY, LOGO, LOGO, 6, 6, "FD");
+          const image = doc.getImageProperties(dataUrl);
+          const maxLogoSize = LOGO - 12;
+          const scale = Math.min(maxLogoSize / image.width, maxLogoSize / image.height);
+          const logoWidth = image.width * scale;
+          const logoHeight = image.height * scale;
           doc.addImage(
             dataUrl,
             dataUrl.startsWith("data:image/png") ? "PNG" : "JPEG",
-            minimal ? pageW / 2 - LOGO / 2 : M,
-            y - 24,
-            LOGO,
-            LOGO,
+            logoX + (LOGO - logoWidth) / 2,
+            logoY + (LOGO - logoHeight) / 2,
+            logoWidth,
+            logoHeight,
           );
         }
       } catch { /* logo optional — text header hi rahega */ }
@@ -131,27 +153,33 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       const align = minimal ? "center" : "left";
       doc.setTextColor(businessColor[0], businessColor[1], businessColor[2]);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(19);
+      doc.setFontSize(18);
       doc.text(nameLines, tx, contentY, { align });
       doc.setTextColor(boldHeader ? titleColor[0] : grey[0], boldHeader ? titleColor[1] : grey[1], boldHeader ? titleColor[2] : grey[2]);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10.5);
+      doc.setFontSize(9.5);
       if (detailLines.length) doc.text(detailLines, tx, detailsY, { align });
 
-      // Bill label and number stay visible across every template.
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.setTextColor(inverseHeader ? titleColor[0] : grey[0], inverseHeader ? titleColor[1] : grey[1], inverseHeader ? titleColor[2] : grey[2]);
-      doc.text(bill.branding.billTitle.toUpperCase(), C - (bill.branding.template === "split" ? 8 : 0), y - 18, { align: "right" });
+      if (bill.branding.template === "split") {
+        doc.setTextColor(255, 255, 255);
+      } else if (inverseHeader) {
+        doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+      } else {
+        doc.setTextColor(grey[0], grey[1], grey[2]);
+      }
+      doc.text(billTitleLines, C - 8, y - 14, { align: "right" });
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);
-      doc.setTextColor(inverseHeader ? titleColor[0] : dark[0], inverseHeader ? titleColor[1] : dark[1], inverseHeader ? titleColor[2] : dark[2]);
-      doc.text(
-        doc.splitTextToSize(billNo, 96),
-        C - (bill.branding.template === "split" ? 8 : 0),
-        y + 2,
-        { align: "right" },
-      );
+      if (bill.branding.template === "split") {
+        doc.setTextColor(255, 255, 255);
+      } else if (inverseHeader) {
+        doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+      } else {
+        doc.setTextColor(dark[0], dark[1], dark[2]);
+      }
+      doc.text(billNumberLines, C - 8, billNumberY, { align: "right" });
 
       if (bill.branding.template === "elegant") {
         doc.setDrawColor(green[0], green[1], green[2]);
@@ -165,32 +193,37 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       doc.line(M, y, C, y);
       y += 22;
 
-      // Meta rows (DATE / PAYMENT, CUSTOMER / PHONE)
-      const label = (t: string, x: number, yy: number) => {
+      const metaCard = (title: string, text: string, x: number, yy: number, width: number) => {
+        const lines = doc.splitTextToSize(text || "—", width - 16);
+        const height = Math.max(42, 27 + lines.length * 11);
+        doc.setFillColor(247, 249, 248);
+        doc.setDrawColor(229, 234, 232);
+        doc.roundedRect(x, yy - 8, width, height, 4, 4, "FD");
+        doc.setFillColor(green[0], green[1], green[2]);
+        doc.roundedRect(x, yy - 8, width, 2, 1, 1, "F");
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
+        doc.setFontSize(8.5);
         doc.setTextColor(grey[0], grey[1], grey[2]);
-        doc.text(t, x, yy);
-      };
-      const value = (t: string, x: number, yy: number, bold = false) => {
-        doc.setFont("helvetica", bold ? "bold" : "normal");
-        doc.setFontSize(11.5);
+        doc.text(title, x + 8, yy + 3);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
         doc.setTextColor(dark[0], dark[1], dark[2]);
-        doc.text(t, x, yy);
+        doc.text(lines, x + 8, yy + 18);
+        return height;
       };
 
-      const midX = (M + C) / 2;
-      label("DATE", M, y);
-      value(bill.saleDate, M, y + 15);
-      label("PAYMENT", midX, y);
-      value(bill.paymentMode, midX, y + 15);
-      y += 40;
-
-      label("CUSTOMER", M, y);
-      value(bill.customerName, M, y + 15, true);
-      label("PHONE", midX, y);
-      value(bill.customerPhone ?? "—", midX, y + 15);
-      y += 36;
+      const metaWidth = (C - M - 12) / 2;
+      const midX = M + metaWidth + 12;
+      const firstMetaRowHeight = Math.max(
+        metaCard("DATE", bill.saleDate, M, y, metaWidth),
+        metaCard("PAYMENT", bill.paymentMode, midX, y, metaWidth),
+      );
+      y += firstMetaRowHeight + 10;
+      const secondMetaRowHeight = Math.max(
+        metaCard("CUSTOMER", bill.customerName, M, y, metaWidth),
+        metaCard("PHONE", bill.customerPhone ?? "—", midX, y, metaWidth),
+      );
+      y += secondMetaRowHeight + 8;
 
       // Items table (ITEM | BOXES | RATE | AMOUNT)
       autoTable(doc, {
@@ -208,6 +241,7 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
           textColor: bill.branding.template === "bold" ? [255, 255, 255] : titleColor,
           fontSize: 9.5,
         },
+        alternateRowStyles: { fillColor: [249, 250, 249] },
         bodyStyles: { lineWidth: { bottom: 0.5 }, lineColor: [235, 235, 235] },
         columnStyles: {
           0: { halign: "left" },

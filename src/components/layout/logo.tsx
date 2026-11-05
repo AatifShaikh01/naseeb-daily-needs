@@ -10,6 +10,7 @@ export function Logo({ className = "", height = 40 }: { className?: string; heig
       height={height}
       className={`block shrink-0 rounded-xl object-cover ${className}`}
       priority
+      unoptimized
     />
   );
 }
