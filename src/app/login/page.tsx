@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 
 import { LoginForm } from "@/components/auth/login-form";
+import { PwaInstallButton } from "@/components/pwa/pwa-install-button";
 
 export const metadata: Metadata = { title: "Login" };
 
@@ -34,6 +35,10 @@ export default async function LoginPage({
 
         <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-card">
           <LoginForm next={next ?? "/"} />
+        </div>
+
+        <div className="mt-4 flex justify-center">
+          <PwaInstallButton />
         </div>
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
