@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -12,8 +12,9 @@ type BIPEvent = Event & {
 
 /** PWA install button — Chrome/Edge me beforeinstallprompt pakadta hai,
  *  iOS Safari me manual steps dikhata hai. Installed hone par chhup jata hai. */
-export function PwaInstallButton() {
+export function PwaInstallButton({ fullWidth = false }: { fullWidth?: boolean }) {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
+  const [installing, setInstalling] = useState(false);
   const [installed, setInstalled] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches,
   );
@@ -48,15 +49,23 @@ export function PwaInstallButton() {
   if (deferred) {
     return (
       <Button
-        size="sm"
+        size={fullWidth ? "default" : "sm"}
+        className={fullWidth ? "h-11 w-full" : undefined}
+        disabled={installing}
+        aria-busy={installing}
         onClick={async () => {
-          await deferred.prompt();
-          const { outcome } = await deferred.userChoice;
-          if (outcome === "accepted") setDeferred(null);
+          setInstalling(true);
+          try {
+            await deferred.prompt();
+            const { outcome } = await deferred.userChoice;
+            if (outcome === "accepted") setDeferred(null);
+          } finally {
+            setInstalling(false);
+          }
         }}
       >
-        <Download className="mr-2 h-4 w-4" />
-        App Install Karo
+        {installing ? <Loader2 className="animate-spin" /> : <Download />}
+        Install App
       </Button>
     );
   }
@@ -65,9 +74,14 @@ export function PwaInstallButton() {
   if (isIos) {
     return (
       <div>
-        <Button size="sm" variant="outline" onClick={() => setShowIosHelp((v) => !v)}>
-          <Download className="mr-2 h-4 w-4" />
-          App Install Karo
+        <Button
+          size={fullWidth ? "default" : "sm"}
+          variant={fullWidth ? "default" : "outline"}
+          className={fullWidth ? "h-11 w-full" : undefined}
+          onClick={() => setShowIosHelp((v) => !v)}
+        >
+          <Download />
+          Install App
         </Button>
         {showIosHelp ? (
           <p className="mt-2 text-xs text-muted-foreground">

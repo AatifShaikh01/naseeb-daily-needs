@@ -37,8 +37,8 @@ export default async function LoginPage({
           <LoginForm next={next ?? "/"} />
         </div>
 
-        <div className="mt-4 flex justify-center">
-          <PwaInstallButton />
+        <div className="mt-4">
+          <PwaInstallButton fullWidth />
         </div>
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
