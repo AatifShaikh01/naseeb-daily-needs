@@ -249,33 +249,6 @@ function SaleFormFields({
       <input type="hidden" name="paidAmount" value={status === "partial" ? paidInput : status === "paid" ? totalAmount : 0} />
       <input type="hidden" name="note" value={note} />
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium">Visit result</p>
-        <div className="grid grid-cols-2 gap-2">
-          {([
-            ["order", "Order"],
-            ["no_order", "No order"],
-          ] as const).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setOutcome(value)}
-              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                outcome === value
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
-              aria-pressed={outcome === value}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {outcome === "no_order" ? (
-          <p className="text-xs text-muted-foreground">Record the shop visit even when no order was placed.</p>
-        ) : null}
-      </div>
-
       {/* Date */}
       <div className="space-y-1.5">
         <label htmlFor="saleDate" className="text-sm font-medium">Date</label>
@@ -346,6 +319,33 @@ function SaleFormFields({
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Visit result</p>
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            ["order", "Order"],
+            ["no_order", "No order"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setOutcome(value)}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                outcome === value
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
+              aria-pressed={outcome === value}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {outcome === "no_order" ? (
+          <p className="text-xs text-muted-foreground">Record the shop visit even when no order was placed.</p>
+        ) : null}
       </div>
 
       {outcome === "order" ? (
