@@ -1,12 +1,12 @@
 import { SHOP } from "@/lib/shop";
 
 export const BILL_TEMPLATES = [
-  { id: "classic", name: "Classic", description: "Clean header with a simple accent line" },
-  { id: "modern", name: "Modern", description: "Soft colour panel with a bold side accent" },
-  { id: "bold", name: "Bold", description: "High-contrast colour header" },
-  { id: "minimal", name: "Minimal", description: "Centered, compact invoice layout" },
-  { id: "elegant", name: "Elegant", description: "Centered identity with double accent lines" },
-  { id: "split", name: "Split", description: "Business details with a highlighted bill-number panel" },
+  { id: "classic", name: "Classic", description: "Traditional multicolour printed-paper header" },
+  { id: "modern", name: "Modern", description: "Soft accent panel with a bold side rule" },
+  { id: "bold", name: "Bold", description: "Full-colour business header and table heading" },
+  { id: "minimal", name: "Minimal", description: "Centered, compact invoice with fine rules" },
+  { id: "elegant", name: "Elegant", description: "Centered serif heading with double rules" },
+  { id: "split", name: "Split", description: "Accent bill-number panel and coloured table heading" },
 ] as const;
 
 export type BillTemplateId = (typeof BILL_TEMPLATES)[number]["id"];

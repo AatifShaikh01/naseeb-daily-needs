@@ -3,6 +3,7 @@ import { PrintButton, ShareBillButton } from "./print-button";
 import { formatDate } from "@/lib/dates";
 import { notFound } from "next/navigation";
 import { BillHeader } from "@/components/bill/bill-header";
+import { getBillContrastColor } from "@/lib/bill-branding";
 
 
 
@@ -33,6 +34,18 @@ export default async function BillPage({
   const pending = Math.round((bill.totalAmount - bill.paidAmount) * 100) / 100;
   const { branding } = bill;
   const billStyle = { "--bill-accent": branding.color } as React.CSSProperties;
+  const coloredTableHeader = branding.template === "bold" || branding.template === "split";
+  const tableHeaderStyle = coloredTableHeader
+    ? { backgroundColor: branding.color, color: getBillContrastColor(branding.color) }
+    : branding.template === "modern"
+      ? { backgroundColor: `${branding.color}14`, borderColor: branding.color }
+      : branding.template === "elegant"
+        ? { borderColor: branding.color }
+        : undefined;
+  const tableBorderStyle =
+    branding.template === "bold" || branding.template === "split"
+      ? { borderColor: branding.color }
+      : undefined;
 
 
 
@@ -63,33 +76,49 @@ export default async function BillPage({
           ))}
         </div>
 
-        <table className="mb-4 w-full table-fixed border-collapse text-xs sm:text-sm">
+        <table
+          className={`mb-4 w-full table-fixed border-collapse ${
+            branding.template === "minimal" ? "text-[11px]" : "text-xs sm:text-sm"
+          } ${branding.template === "elegant" ? "font-serif" : ""}`}
+        >
           <thead>
-            <tr className="bg-gray-100 text-left text-[10px] uppercase sm:text-xs">
-              <th className="w-[9%] border border-gray-500 px-1 py-2 text-center font-semibold">Sr.</th>
-              <th className="w-[43%] border border-gray-500 px-2 py-2 font-semibold">Description</th>
-              <th className="w-[13%] border border-gray-500 px-1 py-2 text-right font-semibold">Qty</th>
-              <th className="w-[16%] border border-gray-500 px-1 py-2 text-right font-semibold">Rate</th>
-              <th className="w-[19%] border border-gray-500 px-1 py-2 text-right font-semibold">Amount</th>
+            <tr
+              className={`text-left text-[10px] uppercase sm:text-xs ${
+                coloredTableHeader || branding.template === "modern" || branding.template === "elegant"
+                  ? ""
+                  : "bg-gray-100"
+              }`}
+              style={tableHeaderStyle}
+            >
+              <th className="w-[9%] border border-gray-500 px-1 py-2 text-center font-semibold" style={tableBorderStyle}>Sr.</th>
+              <th className="w-[43%] border border-gray-500 px-2 py-2 font-semibold" style={tableBorderStyle}>Description</th>
+              <th className="w-[13%] border border-gray-500 px-1 py-2 text-right font-semibold" style={tableBorderStyle}>Qty</th>
+              <th className="w-[16%] border border-gray-500 px-1 py-2 text-right font-semibold" style={tableBorderStyle}>Rate</th>
+              <th className="w-[19%] border border-gray-500 px-1 py-2 text-right font-semibold" style={tableBorderStyle}>Amount</th>
             </tr>
           </thead>
           <tbody>
             {bill.items.map((it, index) => (
-              <tr key={`${it.productName}-${it.productSize}-${index}`}>
-                <td className="h-9 border border-gray-400 px-1 text-center tabular-nums">{index + 1}</td>
-                <td className="h-9 break-words border border-gray-400 px-2">{it.productName}{it.productSize ? ` (${it.productSize})` : ""}</td>
-                <td className="h-9 border border-gray-400 px-1 text-right tabular-nums">{it.boxes}</td>
-                <td className="h-9 border border-gray-400 px-1 text-right tabular-nums">{money(it.ratePerBox)}</td>
-                <td className="h-9 border border-gray-400 px-1 text-right tabular-nums">{money(it.amount)}</td>
+              <tr
+                key={`${it.productName}-${it.productSize}-${index}`}
+                className={`${
+                  branding.template === "modern" || branding.template === "split" ? "even:bg-gray-50" : ""
+                } ${branding.template === "elegant" ? "font-serif" : ""}`}
+              >
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400 px-1 text-center tabular-nums`} style={tableBorderStyle}>{index + 1}</td>
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} break-words border border-gray-400 px-2`} style={tableBorderStyle}>{it.productName}{it.productSize ? ` (${it.productSize})` : ""}</td>
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400 px-1 text-right tabular-nums`} style={tableBorderStyle}>{it.boxes}</td>
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400 px-1 text-right tabular-nums`} style={tableBorderStyle}>{money(it.ratePerBox)}</td>
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400 px-1 text-right tabular-nums`} style={tableBorderStyle}>{money(it.amount)}</td>
               </tr>
             ))}
             {Array.from({ length: Math.max(0, 5 - bill.items.length) }, (_, index) => (
               <tr key={`blank-${index}`} aria-hidden="true">
-                <td className="h-9 border border-gray-400" />
-                <td className="h-9 border border-gray-400" />
-                <td className="h-9 border border-gray-400" />
-                <td className="h-9 border border-gray-400" />
-                <td className="h-9 border border-gray-400" />
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400`} />
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400`} />
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400`} />
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400`} />
+                <td className={`${branding.template === "minimal" ? "h-7" : "h-9"} border border-gray-400`} />
               </tr>
             ))}
             <tr>

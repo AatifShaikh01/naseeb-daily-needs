@@ -2,11 +2,20 @@
 
 import { BillHeader } from "@/components/bill/bill-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { BillBranding } from "@/lib/bill-branding";
+import { getBillContrastColor, type BillBranding } from "@/lib/bill-branding";
 
 const money = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
 
 export function BillBrandingPreview({ branding }: { branding: BillBranding }) {
+  const coloredHeader = branding.template === "bold" || branding.template === "split";
+  const tableHeaderStyle = coloredHeader
+    ? { backgroundColor: branding.color, color: getBillContrastColor(branding.color) }
+    : branding.template === "modern"
+      ? { backgroundColor: `${branding.color}14`, borderColor: branding.color }
+      : branding.template === "elegant"
+        ? { borderColor: branding.color }
+        : undefined;
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -37,7 +46,14 @@ export function BillBrandingPreview({ branding }: { branding: BillBranding }) {
 
           <table className="mb-3 w-full table-fixed border-collapse text-[10px] sm:text-xs">
             <thead>
-              <tr className="bg-gray-100 text-left text-[9px] uppercase sm:text-[10px]">
+              <tr
+                className={`text-left text-[9px] uppercase sm:text-[10px] ${
+                  coloredHeader || branding.template === "modern" || branding.template === "elegant"
+                    ? ""
+                    : "bg-gray-100"
+                }`}
+                style={tableHeaderStyle}
+              >
                 <th className="w-[9%] border border-gray-500 px-1 py-1.5 text-center">Sr.</th>
                 <th className="w-[43%] border border-gray-500 px-2 py-1.5">Description</th>
                 <th className="w-[13%] border border-gray-500 px-1 py-1.5 text-right">Qty</th>
@@ -46,12 +62,12 @@ export function BillBrandingPreview({ branding }: { branding: BillBranding }) {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="h-7 border border-gray-400 px-1 text-center">1</td>
-                <td className="h-7 border border-gray-400 px-2">Sample Product (Large)</td>
-                <td className="h-7 border border-gray-400 px-1 text-right">2</td>
-                <td className="h-7 border border-gray-400 px-1 text-right">{money(250)}</td>
-                <td className="h-7 border border-gray-400 px-1 text-right">{money(500)}</td>
+              <tr className={`${branding.template === "modern" || branding.template === "split" ? "bg-gray-50" : ""} ${branding.template === "elegant" ? "font-serif" : ""}`}>
+                <td className={`border border-gray-400 px-1 text-center ${branding.template === "minimal" ? "h-5" : "h-7"}`}>1</td>
+                <td className={`border border-gray-400 px-2 ${branding.template === "minimal" ? "h-5" : "h-7"}`}>Sample Product (Large)</td>
+                <td className={`border border-gray-400 px-1 text-right ${branding.template === "minimal" ? "h-5" : "h-7"}`}>2</td>
+                <td className={`border border-gray-400 px-1 text-right ${branding.template === "minimal" ? "h-5" : "h-7"}`}>{money(250)}</td>
+                <td className={`border border-gray-400 px-1 text-right ${branding.template === "minimal" ? "h-5" : "h-7"}`}>{money(500)}</td>
               </tr>
               {Array.from({ length: 3 }, (_, index) => (
                 <tr key={`blank-${index}`} aria-hidden="true">

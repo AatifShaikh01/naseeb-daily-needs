@@ -203,58 +203,90 @@ export function BillBrandingForm({ branding }: { branding: BillBranding }) {
       <div className="space-y-3">
         <p className="text-sm font-medium">Choose a bill template</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {BILL_TEMPLATES.map((template) => (
-            <label
-              key={template.id}
-              className={`cursor-pointer rounded-xl border p-3 transition-colors ${
-              draft.template === template.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-              }`}
-            >
-              <input
-                type="radio"
-                name="template"
-                value={template.id}
-              checked={draft.template === template.id}
-              onChange={() => updateField("template", template.id)}
-              className="sr-only"
-              />
-              <div
-                className={`mb-2 overflow-hidden rounded-md border bg-background p-2 ${
-                  template.id === "modern" ? "border-l-4" : ""
+          {BILL_TEMPLATES.map((template) => {
+            const centered = template.id === "minimal" || template.id === "elegant";
+            const filled = template.id === "bold" || template.id === "split";
+
+            return (
+              <label
+                key={template.id}
+                className={`cursor-pointer rounded-xl border p-3 transition-colors ${
+                  draft.template === template.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
                 }`}
-                style={{ borderColor: template.id === draft.template ? draft.color : undefined }}
               >
-                <div className={`mb-2 flex items-center justify-between gap-2 ${template.id === "minimal" ? "flex-col" : ""}`}>
-                  <div className={`flex min-w-0 items-center gap-1.5 ${template.id === "minimal" ? "flex-col" : ""}`}>
-                    <div className="h-6 w-6 shrink-0 rounded-sm border bg-white" />
-                    <div className={template.id === "minimal" ? "text-center" : "min-w-0"}>
-                      <div className="h-1.5 w-16 max-w-full rounded bg-muted-foreground/70" />
-                      <div className="mt-1 h-1 w-12 max-w-full rounded bg-muted" />
-                    </div>
-                  </div>
-                  <div
-                    className="flex h-7 min-w-12 items-center justify-center rounded px-1.5"
-                    style={{ backgroundColor: template.id === "split" || template.id === "bold" ? draft.color : `${draft.color}18` }}
+                <input
+                  type="radio"
+                  name="template"
+                  value={template.id}
+                  checked={draft.template === template.id}
+                  onChange={() => updateField("template", template.id)}
+                  className="sr-only"
+                />
+                <div className={`mb-2 overflow-hidden border bg-white p-2 ${
+                  template.id === "modern" ? "border-l-4" : ""
+                } ${template.id === "elegant" ? "border-y-2" : ""}`}
+                style={{ borderColor: draft.template === template.id || template.id === "modern" || template.id === "elegant" ? draft.color : undefined }}
+                >
+                  {template.id === "classic" || template.id === "split" ? (
+                    <div className="mb-1 h-1" style={{ backgroundColor: draft.color }} />
+                  ) : null}
+                  <div className={`mb-2 flex items-center justify-between gap-2 ${
+                    centered ? "flex-col text-center" : ""
+                  } ${template.id === "bold" ? "p-1" : ""}`}
+                  style={template.id === "bold" ? { backgroundColor: draft.color } : undefined}
                   >
-                    <div className="space-y-1">
-                      <div className="h-1 w-6 rounded bg-current opacity-50" />
-                      <div className="h-1.5 w-8 rounded bg-current opacity-80" />
+                    <div className={`flex min-w-0 items-center gap-1.5 ${
+                      centered ? "flex-col" : ""
+                    }`}>
+                      <div className="h-5 w-5 shrink-0 border border-gray-300 bg-white" />
+                      <div className={centered ? "text-center" : "min-w-0"}>
+                        <div
+                          className={`h-1.5 w-16 max-w-full rounded ${
+                            template.id === "bold" ? "bg-white" : "bg-gray-700"
+                          }`}
+                        />
+                        <div className="mt-1 h-1 w-12 max-w-full bg-gray-300" />
+                      </div>
+                    </div>
+                    <div
+                      className={`flex h-6 min-w-10 items-center justify-center px-1 ${
+                        template.id === "split" ? "border" : ""
+                      }`}
+                      style={{
+                        backgroundColor: filled ? draft.color : template.id === "modern" ? `${draft.color}18` : "white",
+                        borderColor: draft.color,
+                      }}
+                    >
+                      <div className="space-y-1">
+                        <div className={`h-1 w-5 ${filled ? "bg-white/70" : "bg-gray-400"}`} />
+                        <div className={`h-1.5 w-7 ${filled ? "bg-white" : "bg-gray-700"}`} />
+                      </div>
                     </div>
                   </div>
+                  <div className={`mb-1 grid grid-cols-3 text-[5px] ${
+                    template.id === "minimal" ? "border-y border-gray-300" : "border border-gray-400"
+                  }`}>
+                    {["", "", ""].map((_, index) => (
+                      <div
+                        key={index}
+                        className={`h-3 border-r border-gray-300 ${
+                          template.id === "bold" ? "bg-gray-100" : ""
+                        } ${template.id === "modern" ? "bg-slate-50" : ""}`}
+                      />
+                    ))}
+                  </div>
+                  <div className={`space-y-1 ${
+                    template.id === "elegant" ? "border-t border-gray-400 pt-1" : ""
+                  }`}>
+                    <div className="h-1 w-full bg-gray-200" />
+                    <div className="h-1 w-4/5 bg-gray-200" />
+                  </div>
                 </div>
-                <div className="mb-1 grid grid-cols-2 gap-1">
-                  <div className="h-4 rounded-sm bg-muted/70" />
-                  <div className="h-4 rounded-sm bg-muted/70" />
-                </div>
-                <div className="space-y-1 border-t pt-1.5">
-                  <div className="h-1 w-full rounded bg-muted" />
-                  <div className="h-1 w-4/5 rounded bg-muted" />
-                </div>
-              </div>
-              <span className="block text-sm font-semibold">{template.name}</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">{template.description}</span>
-            </label>
-          ))}
+                <span className="block text-sm font-semibold">{template.name}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{template.description}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
 

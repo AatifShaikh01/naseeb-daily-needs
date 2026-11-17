@@ -42,6 +42,22 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       const grey: [number, number, number] = [110, 110, 110];
       const dark: [number, number, number] = [30, 30, 30];
       const inverseHeader = bill.branding.template === "bold";
+      const coloredTableHeader =
+        bill.branding.template === "bold" || bill.branding.template === "split";
+      const tableTextColor: [number, number, number] = coloredTableHeader
+        ? [255, 255, 255]
+        : [45, 45, 45];
+      const tableFillColor: [number, number, number] = coloredTableHeader
+        ? accent
+        : bill.branding.template === "modern"
+          ? [239, 245, 243]
+          : [245, 245, 245];
+      const tableLineColor: [number, number, number] =
+        bill.branding.template === "bold" ||
+        bill.branding.template === "split" ||
+        bill.branding.template === "elegant"
+          ? accent
+          : [135, 135, 135];
       const titleHex =
         inverseHeader
           ? getBillContrastColor(bill.branding.color)
@@ -238,10 +254,18 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
           ...Array.from({ length: Math.max(0, 5 - bill.items.length) }, () => ["", "", "", "", ""]),
         ],
         theme: "grid",
-        styles: { font: "helvetica", fontSize: 10.5, cellPadding: 7, textColor: [30, 30, 30], lineColor: [135, 135, 135], lineWidth: 0.5, minCellHeight: 28 },
+        styles: {
+          font: bill.branding.template === "elegant" ? "times" : "helvetica",
+          fontSize: bill.branding.template === "minimal" ? 9.5 : 10.5,
+          cellPadding: bill.branding.template === "minimal" ? 5 : 7,
+          textColor: [30, 30, 30],
+          lineColor: tableLineColor,
+          lineWidth: 0.5,
+          minCellHeight: bill.branding.template === "minimal" ? 23 : 28,
+        },
         headStyles: {
-          fillColor: [245, 245, 245],
-          textColor: [45, 45, 45],
+          fillColor: tableFillColor,
+          textColor: tableTextColor,
           fontSize: 9.5,
         },
         columnStyles: {
