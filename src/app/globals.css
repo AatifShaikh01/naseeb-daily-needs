@@ -73,6 +73,11 @@
 
 /* Print / PDF styles — hide PrintButton (no-print), reset layout for clean output */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
   .no-print {
     display: none !important;
   }
@@ -86,6 +91,8 @@
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
   }
   .bg-white {
     background: #fff !important;

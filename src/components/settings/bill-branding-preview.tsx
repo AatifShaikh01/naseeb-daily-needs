@@ -2,13 +2,11 @@
 
 import { BillHeader } from "@/components/bill/bill-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getBillReadableAccentColor, type BillBranding } from "@/lib/bill-branding";
+import type { BillBranding } from "@/lib/bill-branding";
 
 const money = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
 
 export function BillBrandingPreview({ branding }: { branding: BillBranding }) {
-  const accent = getBillReadableAccentColor(branding.color);
-
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -18,73 +16,84 @@ export function BillBrandingPreview({ branding }: { branding: BillBranding }) {
         </p>
       </CardHeader>
       <CardContent className="p-3 pt-0 sm:p-5 sm:pt-0">
-        <div className="mx-auto max-w-[700px] overflow-hidden rounded-lg border bg-white p-3 text-gray-900 shadow-sm sm:p-5">
-          <BillHeader branding={branding} billNumber="0123" />
+        <div className="mx-auto max-w-[700px] border border-gray-200 bg-white p-3 text-gray-900 shadow-sm sm:p-5">
+          <BillHeader branding={branding} billNumber="0123" billDate="03 Nov 2026" />
 
-          <div className="mb-4 grid grid-cols-2 gap-2 text-xs sm:gap-3">
+          <div className="mb-3 grid grid-cols-2 border-l border-t border-gray-400 text-xs sm:grid-cols-3">
             {[
-              ["Date", "03 Nov 2026"],
-              ["Payment", "Partial"],
               ["Customer", "Sample Customer"],
               ["Phone", "98765 43210"],
+              ["Payment", "Partial"],
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="min-w-0 rounded border border-gray-200 border-t-2 bg-gray-50 px-2 py-1.5"
-                style={{ borderTopColor: branding.color }}
+                className="min-w-0 border-b border-r border-gray-400 px-2 py-1.5"
               >
                 <p className="text-[9px] font-semibold uppercase text-gray-500">{label}</p>
-                <p className="break-words font-medium">{value}</p>
+                <p className="break-words font-medium capitalize">{value}</p>
               </div>
             ))}
           </div>
 
-          <table className="mb-4 w-full table-fixed text-xs">
+          <table className="mb-3 w-full table-fixed border-collapse text-[10px] sm:text-xs">
             <thead>
-              <tr className="border-b text-left text-[10px] uppercase text-gray-500" style={{ borderColor: branding.color, backgroundColor: `${branding.color}14` }}>
-                <th className="w-[42%] py-2 pl-2 pr-1">Item</th>
-                <th className="w-[15%] px-1 py-2 text-right">Boxes</th>
-                <th className="w-[20%] px-1 py-2 text-right">Rate</th>
-                <th className="w-[23%] py-2 pl-1 pr-2 text-right">Amount</th>
+              <tr className="bg-gray-100 text-left text-[9px] uppercase sm:text-[10px]">
+                <th className="w-[9%] border border-gray-500 px-1 py-1.5 text-center">Sr.</th>
+                <th className="w-[43%] border border-gray-500 px-2 py-1.5">Description</th>
+                <th className="w-[13%] border border-gray-500 px-1 py-1.5 text-right">Qty</th>
+                <th className="w-[16%] border border-gray-500 px-1 py-1.5 text-right">Rate</th>
+                <th className="w-[19%] border border-gray-500 px-1 py-1.5 text-right">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              <tr className="even:bg-gray-50">
-                <td className="break-words py-2 pl-2 pr-1">Sample Product (Large)</td>
-                <td className="px-1 py-2 text-right">2</td>
-                <td className="px-1 py-2 text-right">{money(250)}</td>
-                <td className="py-2 pl-1 pr-2 text-right">{money(500)}</td>
+            <tbody>
+              <tr>
+                <td className="h-7 border border-gray-400 px-1 text-center">1</td>
+                <td className="h-7 border border-gray-400 px-2">Sample Product (Large)</td>
+                <td className="h-7 border border-gray-400 px-1 text-right">2</td>
+                <td className="h-7 border border-gray-400 px-1 text-right">{money(250)}</td>
+                <td className="h-7 border border-gray-400 px-1 text-right">{money(500)}</td>
               </tr>
-              <tr className="border-t-2 bg-gray-100" style={{ borderColor: branding.color }}>
-                <td colSpan={3} className="py-2 pl-2 pr-1 text-right font-bold">Total</td>
-                <td className="py-2 pl-1 pr-2 text-right font-bold">{money(500)}</td>
+              {Array.from({ length: 3 }, (_, index) => (
+                <tr key={`blank-${index}`} aria-hidden="true">
+                  <td className="h-7 border border-gray-400" />
+                  <td className="h-7 border border-gray-400" />
+                  <td className="h-7 border border-gray-400" />
+                  <td className="h-7 border border-gray-400" />
+                  <td className="h-7 border border-gray-400" />
+                </tr>
+              ))}
+              <tr>
+                <td colSpan={4} className="border border-gray-500 px-2 py-1.5 text-right font-bold">Total</td>
+                <td className="border border-gray-500 px-1 py-1.5 text-right font-bold">{money(500)}</td>
               </tr>
               <tr>
-                <td colSpan={3} className="py-1 pr-1 text-right text-gray-500">Paid</td>
-                <td className="py-1 pl-1 text-right text-emerald-700">{money(200)}</td>
+                <td colSpan={4} className="border border-gray-400 px-2 py-1 text-right text-gray-500">Paid</td>
+                <td className="border border-gray-400 px-1 py-1 text-right">{money(200)}</td>
               </tr>
               <tr>
-                <td colSpan={3} className="py-1 pr-1 text-right text-gray-500">Pending</td>
-                <td className="py-1 pl-1 text-right text-red-700">{money(300)}</td>
+                <td colSpan={4} className="border border-gray-400 px-2 py-1 text-right text-gray-500">Balance Due</td>
+                <td className="border border-gray-400 px-1 py-1 text-right">{money(300)}</td>
               </tr>
             </tbody>
           </table>
 
-          <div className="mb-3 border-t border-gray-200 pt-2">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: accent }}>
-              Payment History
-            </p>
-            <div className="grid grid-cols-3 text-[10px] text-gray-600">
-              <span>03 Nov 2026</span>
-              <span>Cash</span>
-              <span className="text-right">{money(200)}</span>
+          <div className="mb-4">
+            <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-gray-600">Payment History</p>
+            <div className="grid grid-cols-3 border border-gray-400 text-[9px] text-gray-600">
+              <span className="border-r border-gray-400 px-2 py-1">03 Nov 2026</span>
+              <span className="border-r border-gray-400 px-2 py-1">Cash</span>
+              <span className="px-2 py-1 text-right">{money(200)}</span>
             </div>
           </div>
 
-          <div className="mt-4 border-t border-gray-100 pt-3 text-center text-[10px] text-gray-500">
-            {branding.footer || " "}
-            <br />
-            {[branding.businessName, branding.businessPhone, branding.businessAddress].filter(Boolean).join(" · ")}
+          <div className="mt-6 flex items-end justify-between gap-4 border-t border-gray-400 pt-2 text-[9px] text-gray-500">
+            <p>{branding.footer || " "}</p>
+            <div className="w-28 border-t border-gray-500 pt-1 text-center">Authorized Signature</div>
+          </div>
+          <div className="mt-3 flex h-1 overflow-hidden" aria-hidden="true">
+            <span className="w-1/3" style={{ backgroundColor: branding.color }} />
+            <span className="w-1/3 bg-cyan-500" />
+            <span className="w-1/3 bg-rose-500" />
           </div>
         </div>
       </CardContent>

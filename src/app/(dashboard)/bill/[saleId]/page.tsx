@@ -3,7 +3,6 @@ import { PrintButton, ShareBillButton } from "./print-button";
 import { formatDate } from "@/lib/dates";
 import { notFound } from "next/navigation";
 import { BillHeader } from "@/components/bill/bill-header";
-import { getBillReadableAccentColor } from "@/lib/bill-branding";
 
 
 
@@ -39,180 +38,113 @@ export default async function BillPage({
 
   return (
 
-    <div data-bill-sheet className="mx-auto max-w-[700px] bg-white p-6 sm:p-10" style={billStyle}>
-
+    <div data-bill-sheet className="mx-auto max-w-[794px] border border-gray-200 bg-white p-4 text-gray-900 shadow-sm sm:p-10" style={billStyle}>
       <PrintButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments, branding }} />
-
       <div id="bill">
         <BillHeader
           branding={branding}
           billNumber={String(bill.id).padStart(4, "0")}
+          billDate={formatDate(bill.saleDate)}
         />
 
-        <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3">
+        <div className="mb-4 grid grid-cols-2 border-l border-t border-gray-400 text-xs sm:grid-cols-3">
           {[
-            ["Date", formatDate(bill.saleDate)],
-            ["Payment", bill.paymentMode],
             ["Customer", bill.customerName],
             ["Phone", bill.customerPhone ?? "—"],
+            ["Payment", bill.paymentMode],
           ].map(([label, value]) => (
             <div
               key={label}
-              className="min-w-0 rounded-md border border-border/70 border-t-2 bg-muted/30 px-2.5 py-2 sm:px-3"
-              style={{ borderTopColor: branding.color }}
+              className="min-w-0 border-b border-r border-gray-400 px-2 py-2"
             >
-              <p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p>
-              <p className="break-words text-xs font-medium capitalize text-foreground sm:text-sm">{value}</p>
+              <p className="text-[9px] font-semibold uppercase text-gray-500">{label}</p>
+              <p className="break-words font-medium capitalize text-gray-900">{value}</p>
             </div>
           ))}
         </div>
 
-
-
-        <table className="mb-6 w-full table-fixed border-collapse text-sm">
-
+        <table className="mb-4 w-full table-fixed border-collapse text-xs sm:text-sm">
           <thead>
-
-            <tr
-              className="border-b text-left text-muted-foreground uppercase text-[10px] sm:text-[11px]"
-              style={{ borderColor: branding.color, backgroundColor: `${branding.color}14` }}
-            >
-
-              <th className="w-[42%] py-3 pl-2 pr-1 font-medium">Item</th>
-
-              <th className="w-[15%] px-1 py-3 text-right font-medium">Boxes</th>
-
-              <th className="w-[20%] px-1 py-3 text-right font-medium">Rate (₹)</th>
-
-              <th className="w-[23%] py-3 pl-1 pr-2 text-right font-medium">Amount (₹)</th>
-
+            <tr className="bg-gray-100 text-left text-[10px] uppercase sm:text-xs">
+              <th className="w-[9%] border border-gray-500 px-1 py-2 text-center font-semibold">Sr.</th>
+              <th className="w-[43%] border border-gray-500 px-2 py-2 font-semibold">Description</th>
+              <th className="w-[13%] border border-gray-500 px-1 py-2 text-right font-semibold">Qty</th>
+              <th className="w-[16%] border border-gray-500 px-1 py-2 text-right font-semibold">Rate</th>
+              <th className="w-[19%] border border-gray-500 px-1 py-2 text-right font-semibold">Amount</th>
             </tr>
-
           </thead>
-
-          <tbody className="divide-y divide-border/40">
-
-            {bill.items.map((it) => (
-
-              <tr key={`${it.productName}-${it.productSize}`} className="text-left even:bg-muted/20">
-
-                <td className="break-words py-3 pl-2 pr-1 text-foreground">
-
-                  {it.productName}{it.productSize ? ` (${it.productSize})` : ""}
-
-                </td>
-
-                <td className="px-1 py-3 text-right tabular-nums">{it.boxes}</td>
-
-                <td className="px-1 py-3 text-right tabular-nums text-muted-foreground">
-
-                  {money(it.ratePerBox)}
-
-                </td>
-
-                <td className="py-3 pl-1 pr-2 text-right tabular-nums font-medium">
-
-                  {money(it.amount)}
-
-                </td>
-
+          <tbody>
+            {bill.items.map((it, index) => (
+              <tr key={`${it.productName}-${it.productSize}-${index}`}>
+                <td className="h-9 border border-gray-400 px-1 text-center tabular-nums">{index + 1}</td>
+                <td className="h-9 break-words border border-gray-400 px-2">{it.productName}{it.productSize ? ` (${it.productSize})` : ""}</td>
+                <td className="h-9 border border-gray-400 px-1 text-right tabular-nums">{it.boxes}</td>
+                <td className="h-9 border border-gray-400 px-1 text-right tabular-nums">{money(it.ratePerBox)}</td>
+                <td className="h-9 border border-gray-400 px-1 text-right tabular-nums">{money(it.amount)}</td>
               </tr>
-
             ))}
-
-            <tr className="border-t-2 bg-muted/40" style={{ borderColor: branding.color }}>
-
-              <td className="py-2 pl-2 pr-1 text-right font-bold text-foreground" colSpan={3}>
-
-                Total
-
-              </td>
-
-              <td className="py-2 pl-1 pr-2 text-right tabular-nums font-bold text-foreground">
-
-                {money(bill.totalAmount)}
-
-              </td>
-
+            {Array.from({ length: Math.max(0, 5 - bill.items.length) }, (_, index) => (
+              <tr key={`blank-${index}`} aria-hidden="true">
+                <td className="h-9 border border-gray-400" />
+                <td className="h-9 border border-gray-400" />
+                <td className="h-9 border border-gray-400" />
+                <td className="h-9 border border-gray-400" />
+                <td className="h-9 border border-gray-400" />
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={4} className="border border-gray-500 px-2 py-2 text-right font-bold">Total</td>
+              <td className="border border-gray-500 px-1 py-2 text-right font-bold tabular-nums">{money(bill.totalAmount)}</td>
             </tr>
-
-            <tr className="text-left">
-
-              <td className="py-2 pr-2 text-right font-medium text-muted-foreground" colSpan={3}>
-
-                Paid
-
-              </td>
-
-              <td className="py-2 pr-2 text-right tabular-nums font-medium text-emerald-700">
-
-                {money(bill.paidAmount)}
-
-              </td>
-
+            <tr>
+              <td colSpan={4} className="border border-gray-400 px-2 py-1.5 text-right text-gray-600">Paid</td>
+              <td className="border border-gray-400 px-1 py-1.5 text-right tabular-nums">{money(bill.paidAmount)}</td>
             </tr>
-
-            <tr className="text-left">
-
-              <td className="py-2 pr-2 text-right font-medium text-muted-foreground" colSpan={3}>
-
-                Pending
-
-              </td>
-
-              <td className="py-2 pr-2 text-right tabular-nums font-medium text-red-700">
-
-                {money(pending)}
-
-              </td>
-
+            <tr>
+              <td colSpan={4} className="border border-gray-400 px-2 py-1.5 text-right text-gray-600">Balance Due</td>
+              <td className="border border-gray-400 px-1 py-1.5 text-right tabular-nums">{money(pending)}</td>
             </tr>
-
           </tbody>
-
         </table>
 
-        <div className="mb-6">
-          <h2
-            className="mb-2 text-xs font-semibold uppercase tracking-wide"
-            style={{ color: getBillReadableAccentColor(branding.color) }}
-          >
-            Payment History
-          </h2>
+        <div className="mb-5">
+          <h2 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-600">Payment History</h2>
           {bill.payments.length ? (
-            <table className="w-full text-sm">
+            <table className="w-full border-collapse text-xs">
               <thead>
-                <tr className="border-b border-border/60 text-left text-xs text-muted-foreground">
-                  <th className="py-2 pr-2 font-medium">Date</th>
-                  <th className="py-2 pr-2 font-medium">Mode</th>
-                  <th className="py-2 text-right font-medium">Amount (₹)</th>
+                <tr className="text-left text-gray-600">
+                  <th className="border border-gray-400 px-2 py-1 font-medium">Date</th>
+                  <th className="border border-gray-400 px-2 py-1 font-medium">Mode</th>
+                  <th className="border border-gray-400 px-2 py-1 text-right font-medium">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {bill.payments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-border/40">
-                    <td className="py-2 pr-2">{formatDate(payment.paidOn)}</td>
-                    <td className="py-2 pr-2 capitalize">{payment.mode}</td>
-                    <td className="py-2 text-right font-medium">{money(payment.amount)}</td>
+                  <tr key={payment.id}>
+                    <td className="border border-gray-400 px-2 py-1">{formatDate(payment.paidOn)}</td>
+                    <td className="border border-gray-400 px-2 py-1 capitalize">{payment.mode}</td>
+                    <td className="border border-gray-400 px-2 py-1 text-right">{money(payment.amount)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-sm text-muted-foreground">No payment entries recorded.</p>
+            <p className="text-xs text-gray-500">No payment entries recorded.</p>
           )}
         </div>
 
-
-
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-
-          {branding.footer}<br />
-
+        <div className="mt-8 flex items-end justify-between gap-6 border-t border-gray-400 pt-3 text-xs">
+          <p className="max-w-[65%] whitespace-pre-line text-gray-600">{branding.footer}</p>
+          <div className="w-36 border-t border-gray-500 pt-1 text-center text-[10px] text-gray-600">Authorized Signature</div>
+        </div>
+        <p className="mt-3 border-t border-gray-200 pt-2 text-center text-[9px] text-gray-500">
           {[branding.businessName, branding.businessPhone, branding.businessAddress].filter(Boolean).join(" · ")}
-
         </p>
-
+        <div className="mt-3 flex h-1.5 overflow-hidden" aria-hidden="true">
+          <span className="w-1/3" style={{ backgroundColor: branding.color }} />
+          <span className="w-1/3 bg-cyan-500" />
+          <span className="w-1/3 bg-rose-500" />
+        </div>
       </div>
 
       <ShareBillButton bill={{ id: bill.id, saleDate: bill.saleDate, customerName: bill.customerName, customerPhone: bill.customerPhone, paymentMode: bill.paymentMode, totalAmount: bill.totalAmount, paidAmount: bill.paidAmount, items: bill.items, payments: bill.payments, branding }} />

@@ -196,11 +196,9 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       const metaCard = (title: string, text: string, x: number, yy: number, width: number) => {
         const lines = doc.splitTextToSize(text || "—", width - 16);
         const height = Math.max(42, 27 + lines.length * 11);
-        doc.setFillColor(247, 249, 248);
-        doc.setDrawColor(229, 234, 232);
-        doc.roundedRect(x, yy - 8, width, height, 4, 4, "FD");
-        doc.setFillColor(green[0], green[1], green[2]);
-        doc.roundedRect(x, yy - 8, width, 2, 1, 1, "F");
+        doc.setDrawColor(135, 135, 135);
+        doc.setLineWidth(0.5);
+        doc.rect(x, yy - 8, width, height);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(grey[0], grey[1], grey[2]);
@@ -228,26 +226,30 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
       // Items table (ITEM | BOXES | RATE | AMOUNT)
       autoTable(doc, {
         startY: y,
-        head: [["ITEM", "BOXES", "RATE (Rs.)", "AMOUNT (Rs.)"]],
-        body: bill.items.map((it) => [
-          it.productName + (it.productSize ? ` (${it.productSize})` : ""),
-          String(it.boxes),
-          inr(it.ratePerBox),
-          inr(it.amount),
-        ]),
-        styles: { font: "helvetica", fontSize: 10.5, cellPadding: 8, textColor: [30, 30, 30] },
+        head: [["SR.", "DESCRIPTION", "QTY", "RATE (Rs.)", "AMOUNT (Rs.)"]],
+        body: [
+          ...bill.items.map((it, index) => [
+            String(index + 1),
+            it.productName + (it.productSize ? ` (${it.productSize})` : ""),
+            String(it.boxes),
+            inr(it.ratePerBox),
+            inr(it.amount),
+          ]),
+          ...Array.from({ length: Math.max(0, 5 - bill.items.length) }, () => ["", "", "", "", ""]),
+        ],
+        theme: "grid",
+        styles: { font: "helvetica", fontSize: 10.5, cellPadding: 7, textColor: [30, 30, 30], lineColor: [135, 135, 135], lineWidth: 0.5, minCellHeight: 28 },
         headStyles: {
-          fillColor: bill.branding.template === "bold" ? green : [255, 255, 255],
-          textColor: bill.branding.template === "bold" ? [255, 255, 255] : titleColor,
+          fillColor: [245, 245, 245],
+          textColor: [45, 45, 45],
           fontSize: 9.5,
         },
-        alternateRowStyles: { fillColor: [249, 250, 249] },
-        bodyStyles: { lineWidth: { bottom: 0.5 }, lineColor: [235, 235, 235] },
         columnStyles: {
-          0: { halign: "left" },
-          1: { halign: "center" },
-          2: { halign: "right" },
-          3: { halign: "right", fontStyle: "bold" },
+          0: { halign: "center", cellWidth: 34 },
+          1: { halign: "left" },
+          2: { halign: "right", cellWidth: 54 },
+          3: { halign: "right", cellWidth: 76 },
+          4: { halign: "right", cellWidth: 88 },
         },
         margin: { left: M, right: M },
       });
@@ -289,13 +291,13 @@ export async function appendBillToPdf(doc: import("jspdf").jsPDF, bill: BillPage
             inr(payment.amount),
             payment.note,
           ]),
-          styles: { font: "helvetica", fontSize: 9.5, cellPadding: 5, textColor: [30, 30, 30] },
+          theme: "grid",
+          styles: { font: "helvetica", fontSize: 9.5, cellPadding: 5, textColor: [30, 30, 30], lineColor: [135, 135, 135], lineWidth: 0.5 },
           headStyles: {
-            fillColor: bill.branding.template === "bold" ? green : [255, 255, 255],
-            textColor: bill.branding.template === "bold" ? [255, 255, 255] : titleColor,
+            fillColor: [245, 245, 245],
+            textColor: [45, 45, 45],
             fontSize: 8.5,
           },
-          bodyStyles: { lineWidth: { bottom: 0.5 }, lineColor: [235, 235, 235] },
           columnStyles: { 2: { halign: "right" } },
           margin: { left: M, right: M },
         });
