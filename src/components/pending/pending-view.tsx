@@ -273,11 +273,17 @@ export function PendingView({
                           <p className="text-xs text-muted-foreground">
                             {formatDate(s.saleDate)} · {s.deliveredBy}
                           </p>
-                          <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm font-medium">
-                            {s.items.map((item, index) => (
-                              <li key={`${item.productId}-${index}`}>{itemLabel(item)}</li>
-                            ))}
-                          </ul>
+                          {s.items.length > 0 ? (
+                            <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm font-medium">
+                              {s.items.map((item, index) => (
+                                <li key={`${item.productId}-${index}`}>{itemLabel(item)}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              No order items recorded; any existing balance can still be collected.
+                            </p>
+                          )}
                         </div>
                         {statusBadge(statusOf(s))}
                       </div>

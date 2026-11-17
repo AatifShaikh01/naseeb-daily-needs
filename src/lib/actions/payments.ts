@@ -52,10 +52,12 @@ export async function recordSalePaymentAction(
     .where(eq(sales.id, saleId));
   if (!sale) return { error: "Sale not found." };
   if (!isSaleRelatedToStaff(sale, session)) return { error: "You can only collect payments for your related sales." };
-  if (!sale.hasItems) return { error: "Cannot record a payment for a No Order visit." };
 
   const total = Number(sale.totalAmount);
   const cur = Number(sale.paidAmount);
+  if (!sale.hasItems && total - cur <= 0.005) {
+    return { error: "This No Order visit has no outstanding balance." };
+  }
   const newPaid = Math.round((cur + amount) * 100) / 100;
 
   await db
@@ -118,7 +120,7 @@ export async function recordCustomerPaymentAction(
   const tp = normPhone(customerPhone);
   const mine = all
     .filter((s) => normName(s.customerName) === tn && normPhone(s.customerPhone) === tp)
-    .filter((s) => s.hasItems)
+    .filter((s) => s.hasItems || Number(s.totalAmount) - Number(s.paidAmount) > 0.005)
     .filter((s) => isSaleRelatedToStaff(s, session))
     .sort((a, b) => (a.saleDate < b.saleDate ? -1 : a.saleDate > b.saleDate ? 1 : a.id - b.id));
 
